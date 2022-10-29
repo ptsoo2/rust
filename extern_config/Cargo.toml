@@ -1,17 +1,13 @@
 [package]
-name = "hi_rust"
+name = "extern_config"
 version = "0.1.0"
 edition = "2021"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-extern_common = { path = "extern_common" }
-extern_config = { path = "extern_config" }
+extern_common = { path = "../extern_common" }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.14"
 anyhow = "1.0"
-enum-iterator = "1.2.0"
-
-[dependencies.yaml-rust]
-git = "https://github.com/chyh1990/yaml-rust.git"

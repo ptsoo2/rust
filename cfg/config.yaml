@@ -1,0 +1,6 @@
+---
+host:
+  ip: "123"
+  port: 123
+naming:
+  service_name: "1231231"
