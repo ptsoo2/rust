@@ -17,12 +17,12 @@ pub struct Naming {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct Base_Format {
+pub struct ConfigGroup {
 	pub host: Host,
 	pub naming: Naming,
 }
 
-impl Default for Base_Format {
+impl Default for ConfigGroup {
 	fn default() -> Self {
 		Self {
 			host: internal::host(),

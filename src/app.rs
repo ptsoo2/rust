@@ -1,5 +1,6 @@
 use extern_config::config;
-use extern_config::config_format;
+
+static mut APP: Option<CApplication> = None;
 
 pub struct CApplication {
 	config_: config::CConfig,
@@ -19,13 +20,14 @@ impl CApplication {
 		Self { ..Self::default() }
 	}
 	
-	pub fn load_config(&mut self, path: String) -> bool {
-		let ret = self.config_.load(path, config::eConfig_Load_Type::YAML);
-		if ret.is_err() == true {
-			println!("{:?}", ret.err());
-			return false;
-		}
-		
-		return true;
+	pub fn load_config(&mut self, path: String) -> anyhow::Result<()> {
+		self.config_.load(path, config::EConfigLoadType::YAML)
+	}
+}
+
+pub fn get_instance() -> &'static mut CApplication
+{
+	unsafe {
+		APP.get_or_insert(CApplication::new())
 	}
 }
