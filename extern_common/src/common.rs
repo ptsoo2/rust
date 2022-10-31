@@ -18,3 +18,24 @@ pub fn is_available_local_port(port: u16) -> bool {
 		Err(_) => true,
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+#[macro_export]
+macro_rules! function {
+    () => {{
+        fn f() {}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        let name = type_name_of(f);
+        &name[..name.len() -3]	// -3 => remove ::f -_-
+    }}
+}
+
+#[macro_export]
+macro_rules! log {
+    ($($arg:tt)*) => {{
+		print!("{} | {} | ", function!(), line!());
+		println!($($arg)*);
+    }}
+}

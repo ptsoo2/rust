@@ -30,13 +30,6 @@ impl Default for ConfigGroup {
 		}
 	}
 }
-// #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
-// pub struct Base_Format {
-// 	#[serde(default = "default::host")]
-// 	host: Host,
-// 	#[serde(default = "default::naming")]
-// 	naming: Naming,
-// }
 
 mod internal {
 	use crate::config_format::{Host, Naming};
