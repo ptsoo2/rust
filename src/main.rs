@@ -1,7 +1,3 @@
-use std::net::{Ipv4Addr};
-
-use ex_net::common::get_my_ip;
-
 mod app;
 mod tests;
 

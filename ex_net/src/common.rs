@@ -4,11 +4,6 @@ use anyhow::bail;
 use network_interface::{NetworkInterface};
 use network_interface::NetworkInterfaceConfig;
 
-use chrono::Local;
-use ex_common::{
-	log, function
-};
-
 pub fn is_available_local_port(ip: &String, port: u16) -> bool {
 	let ip = &ip[..];
 	match std::net::TcpStream::connect((ip, port)) {
