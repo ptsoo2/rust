@@ -1,10 +1,10 @@
 use std::fs;
-
-use extern_common::common;
+use chrono::Local;
+use ex_common::{common, log, function};
 use crate::config_format;
 use config_format::ConfigGroup;
 
-pub fn parse_config_path(args: Vec<String>) -> anyhow::Result<String> {
+pub fn parse_config_path(args: &Vec<String>) -> anyhow::Result<String> {
 	let config_path: String = match args.len() < 2 {
 		true => {
 			// 없는 경우 하드코딩
@@ -18,8 +18,8 @@ pub fn parse_config_path(args: Vec<String>) -> anyhow::Result<String> {
 }
 
 pub struct CConfig {
+	pub data_: ConfigGroup,
 	path_: String,
-	data_: ConfigGroup,
 }
 
 impl Default for CConfig {
@@ -44,7 +44,7 @@ impl CConfig {
 	pub fn load(&mut self, path: String, load_type: EConfigLoadType) -> anyhow::Result<()> {
 		self.path_ = path;
 		let str_path = &self.path_[..];
-		println!("Config path: {}", str_path);
+		log!("config path: {}", str_path);
 		
 		self.data_ = match load_type {
 			EConfigLoadType::YAML => self._load_from_yaml(str_path),
@@ -55,7 +55,7 @@ impl CConfig {
 			}
 		}?;
 		
-		println!("{:?}", self.data_);
+		log!("config contents: {:?}", self.data_);
 		Ok(())
 	}
 	

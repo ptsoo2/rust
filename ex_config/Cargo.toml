@@ -1,13 +1,14 @@
 [package]
-name = "extern_config"
+name = "ex_config"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-extern_common = { path = "../extern_common" }
+ex_common = { path = "../ex_common" }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.14"
 anyhow = "1.0"
+chrono = "0.4"

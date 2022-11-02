@@ -1,6 +1,6 @@
 ---
 host:
-  ip: "123"
-  port: 123
+  ip: "localhost"
+  port: 30002
 naming:
-  service_name: "1231231"
+  service_name: "test_service"

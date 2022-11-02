@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "extern_common"
+name = "ex_config"
 version = "0.1.0"
