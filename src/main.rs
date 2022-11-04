@@ -1,7 +1,18 @@
+use std::net::{
+	Ipv4Addr, Ipv6Addr
+};
+use ex_net::ip::get_my_ip;
+
 mod app;
 mod tests;
 
 fn main() -> anyhow::Result<()> {
+	let a = get_my_ip::<Ipv4Addr>()?;
+	println!("{}", a);
+	
+	let b = get_my_ip::<Ipv6Addr>()?;
+	println!("{:?}", b);
+	
 	init_singletons();
 	
 	app::get_instance().start()?;

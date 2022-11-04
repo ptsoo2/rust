@@ -7,43 +7,43 @@ use serde::{Deserialize, Serialize};
  * 이름은 정확하게 일치해야한다.  */
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Host {
-	pub ip: String,
-	pub port: u16,
+    pub ip: String,
+    pub port: u16,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Naming {
-	pub service_name: String,
+    pub service_name: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct ConfigGroup {
-	pub host: Host,
-	pub naming: Naming,
+    pub host: Host,
+    pub naming: Naming,
 }
 
 impl Default for ConfigGroup {
-	fn default() -> Self {
-		Self {
-			host: internal::host(),
-			naming: internal::naming(),
-		}
-	}
+    fn default() -> Self {
+        Self {
+            host: internal::host(),
+            naming: internal::naming(),
+        }
+    }
 }
 
 mod internal {
-	use crate::config_format::{Host, Naming};
-	
-	pub fn host() -> Host {
-		Host {
-			ip: ("").to_owned(),
-			port: 30002,
-		}
-	}
-	
-	pub fn naming() -> Naming {
-		Naming {
-			service_name: ("123123").to_owned(),
-		}
-	}
+    use crate::config_format::{Host, Naming};
+
+    pub fn host() -> Host {
+        Host {
+            ip: ("").to_owned(),
+            port: 30002,
+        }
+    }
+
+    pub fn naming() -> Naming {
+        Naming {
+            service_name: ("123123").to_owned(),
+        }
+    }
 }

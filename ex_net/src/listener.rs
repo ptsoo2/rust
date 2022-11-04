@@ -1,13 +1,9 @@
-use std::io::{Read, Write};
-use std::net::{TcpListener, TcpStream};
-use std::thread::sleep;
-use std::time::Duration;
+use crate::common::is_available_local_port;
 use anyhow::bail;
 use chrono::Local;
-use ex_common::{
-	log, function
-};
-use crate::common::{is_available_local_port};
+use ex_common::{function, log};
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 
 fn _get_hard_coding_html() -> &'static str {
 	"
@@ -50,13 +46,13 @@ pub fn startup_retry(ip: &String, mut port: u16, retry_count: u8) -> anyhow::Res
 	let listener = TcpListener::bind(&host)?;
 	log!("listener start({})", &host);
 	
-	let mut vecStream: Vec<TcpStream> = Vec::new();
+	let mut vec_stream: Vec<TcpStream> = Vec::new();
 	
 	for stream in listener.incoming() {
 		let stream = stream?;
 		log!("connection extablished{:?}", stream);
 		handle_connection(&stream)?;
-		vecStream.push(stream);
+		vec_stream.push(stream);
 	}
 	
 	Ok(())

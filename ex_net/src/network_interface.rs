@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 // use crate::common::get_my_ip_v4;
 
 pub struct NetworkInterface {
-	_ip_addr: Ipv4Addr,
+    _ip_addr: Ipv4Addr,
 }
 
 // impl NetworkInterface {

@@ -1,2 +1,2 @@
-pub mod common;
 pub mod bench;
+pub mod common;

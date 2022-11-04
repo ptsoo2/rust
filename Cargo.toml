@@ -16,6 +16,7 @@ enum-iterator = "1.2.0"
 function_name = "0.3.0"
 chrono = "0.4"
 network-interface = "0.1.4"
+rocket = "0.4.10"
 
 [dev-dependencies]
 

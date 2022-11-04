@@ -1,8 +1,6 @@
-use std::{env, io};
+use crate::{function, log};
 use chrono::Local;
-use crate::{
-	function, log
-};
+use std::{env, io};
 
 pub fn get_current_path() -> io::Result<std::path::PathBuf> {
 	env::current_dir()
@@ -25,8 +23,8 @@ macro_rules! function {
             std::any::type_name::<T>()
         }
         let name = type_name_of(f);
-        &name[..name.len() -3]	// -3 => remove ::f -_-
-    }}
+        &name[..name.len() - 3] // -3 => remove ::f -_-
+    }};
 }
 
 #[macro_export]
@@ -37,4 +35,41 @@ macro_rules! log {
 		print!($($arg)*);
 	    println!("}}");
     }}
+}
+
+// continue macro
+#[macro_export]
+macro_rules! continue_fail_result {
+    ($res:expr) => {
+        match $res {
+            Ok(val) => val,
+            Err(e) => {
+                continue;
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! continue_fail_option {
+    ($res:expr) => {
+        match $res {
+            Some(val) => val,
+            None => {
+                continue;
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! continue_fail_condition {
+    ($res:expr) => {
+        match $res {
+            false => {
+                continue;
+            },
+            _ =>  {}
+        }
+    };
 }
