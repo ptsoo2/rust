@@ -1,6 +1,20 @@
 ---
-host:
-  ip: "localhost"
-  port: 30002
-naming:
-  service_name: "test_service"
+server_group:
+  -
+    host:
+      ip: "localhost"
+      port: 30002
+    naming:
+      service_name: "test_service"
+    customize:
+      env_type: 0
+      worker_count: 10
+  -
+    host:
+      ip: "localhost"
+      port: 30003
+    naming:
+      service_name: "test_service2"
+    customize:
+      env_type: 0
+      worker_count: 10

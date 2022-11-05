@@ -52,5 +52,5 @@ pub fn get_my_ip<T>() -> anyhow::Result<T> where T: ConvertIpAddr<T> + Copy {
 		
 		return Ok(addr.unwrap());
 	}
-	bail!("")
+	bail!("not found ip address")
 }

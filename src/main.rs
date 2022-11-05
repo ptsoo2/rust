@@ -1,27 +1,39 @@
-use std::net::{
-	Ipv4Addr, Ipv6Addr
-};
-use ex_net::ip::get_my_ip;
+#![feature(decl_macro)]
 
-mod app;
+#[macro_use]
+extern crate rocket;
+
+use std::time::Duration;
+use ex_config::config::{CConfig, EConfigLoadType};
+
+use crate::server::mount;
+use crate::server_common::{launch_all, make_launch_hint};
+
 mod tests;
+mod server_common;
+mod server;
+mod command_line;
 
 fn main() -> anyhow::Result<()> {
-	let a = get_my_ip::<Ipv4Addr>()?;
-	println!("{}", a);
 	
-	let b = get_my_ip::<Ipv6Addr>()?;
-	println!("{:?}", b);
+	// parse commandLine
+	let command_line = command_line::CommandLine::default()
+		.load()?;
 	
-	init_singletons();
+	// load config
+	let config = CConfig::default()
+		.load(command_line.config_file_path_, EConfigLoadType::YAML)?;
 	
-	app::get_instance().start()?;
+	let launch_hint = make_launch_hint(
+		&config.server_group_.server_group,
+		&[mount, mount]
+	)?;
 	
-	let host = &app::get_instance().get_config_data().host;
-	ex_net::listener::startup(&host.ip, host.port)?;
-	Ok(())
-}
-
-pub fn init_singletons() {
-	let _ret = app::get_instance();
+	// launch
+	launch_all(launch_hint)?;
+	
+	println!("run out spawn rocket");
+	loop {
+		std::thread::sleep(Duration::from_millis(1))
+	}
 }
