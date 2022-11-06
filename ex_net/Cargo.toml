@@ -1,0 +1,13 @@
+[package]
+name = "ex_net"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ex_common = { path = "../ex_common" }
+anyhow = "1.0"
+chrono = "0.4"
+network-interface = "0.1.4"
+rocket = "0.4.10"
