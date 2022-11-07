@@ -6,11 +6,13 @@ extern crate rocket;
 use std::borrow::{Borrow, BorrowMut};
 use std::cell::{Cell, UnsafeCell};
 use std::net::{TcpListener, TcpStream};
-use std::sync::{Arc, Mutex};
+use std::ops::Deref;
+use std::os::windows::io::AsRawSocket;
+use std::sync::{Arc, mpsc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread;
+use std::{io, thread};
 use std::thread::spawn;
 use std::time::Duration;
 use chrono::Local;
@@ -54,36 +56,44 @@ mod command_line;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+use libc;
+use crate::tests::_test_acceptor;
+
 struct Worker {
 	id_: usize,
 	thread_: Option<thread::JoinHandle<()>>,
-	stop_handle_: Arc<AtomicBool>,
 }
 
 impl Worker {
-	fn new(id: usize) -> Worker {
-		Worker {
-			id_: id,
-			thread_: None,
-			stop_handle_: Arc::new(AtomicBool::new(false))
-		}
-	}
-	
-	fn start(&mut self, _receiver: Arc<Mutex<Receiver<Job>>>) {
-		let my_id = self.id_;
-		let handle = self.stop_handle_.clone();
+	fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Worker {
+		let stop_handle = Arc::new(AtomicBool::new(false));
+		let _clone = stop_handle.clone();
 		let thread = spawn(move || {
-			log!("Spawn up worker({})", my_id);
-			while handle.load(Acquire) == false {
+			log!("Worker {id} spawned.");
+			loop {
+				let message = receiver.lock().unwrap().recv();
+				match message {
+					Ok(job) => {
+						log!("Worker {id} got a job; executing.");
+						job();
+					},
+					Err(_) => {
+						//log!("Worker {id}, disconnected; shutting down.");
+						break;
+					}
+				}
+				
 				thread::sleep(Duration::from_millis(1));
 			}
 		});
-		self.thread_ = Some(thread);
+		
+		Worker {
+			id_: id,
+			thread_: Some(thread),
+		}
 	}
 	
-	fn stop(&mut self) {
-		self.stop_handle_.store(true, Release);
-	}
+	fn start(&mut self, _receiver: Arc<Mutex<Receiver<Job>>>) {}
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -101,7 +111,7 @@ impl ThreadPool {
 		let mut workers = Vec::with_capacity(size);
 		
 		for id in 0..size {
-			let mut worker = Worker::new(id);
+			let mut worker = Worker::new(id, receiver.clone());
 			worker.start(Arc::clone(&receiver));
 			workers.push(worker);
 		}
@@ -118,21 +128,16 @@ impl ThreadPool {
 		let job = Box::new(f);
 		self.sender_.as_ref().unwrap().send(job).unwrap();
 	}
-	
-	pub fn stop(&mut self)
-	{
-		for x in &mut self.workers_ {
-			x.stop();
-		}
-	}
 }
 
 impl Drop for ThreadPool {
 	fn drop(&mut self) {
+		drop(self.sender_.take());
+		
 		for worker in &mut self.workers_ {
+			log!("Shutting down worker({})", worker.id_);
 			if let Some(thread) = worker.thread_.take() {
 				thread.join().unwrap();
-				log!("Shutting down worker({})", worker.id_);
 			}
 		}
 	}
@@ -143,32 +148,22 @@ fn handle_connection(_stream: TcpStream) {}
 fn regist_signal_handler() -> Receiver<()> {
 	let (tx, rx) = channel();
 	ctrlc::set_handler(move || {
-		println!("Signal detected!!!!!");
+		log!("Signal detected!!!!!");
 		tx.send(()).expect("Could not send signal on channel.");
 	}).expect("Error setting Ctrl-C handler");
 	
-	println!("Waiting for Ctrl-C...");
+	log!("Waiting for Ctrl-C...");
 	rx
 }
 
 fn main() -> anyhow::Result<()> {
 	let rx = regist_signal_handler();
 	
-	let _listener = TcpListener::bind("localhost:7878")?;
-	let mut pool = ThreadPool::new(10);
+	let mut _pool = ThreadPool::new(10);
 	
-	// for stream in listener.incoming() {
-	// 	log!("loop");
-	// 	pool.execute(|| {
-	// 		handle_connection(stream.unwrap());
-	// 	});
-	// }
-	
-	pool.stop();
-	
-	println!("Got it! Exiting...");
 	rx.recv().expect("Could not receive from channel");
 	
-	println!("Shutting down");
+	println!("Got it! Exiting...");
+	
 	Ok(())
 }
