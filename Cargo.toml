@@ -8,6 +8,7 @@ edition = "2021"
 ex_common = { path = "ex_common" }
 ex_config = { path = "ex_config" }
 ex_net = { path = "ex_net" }
+ex_util = { path = "ex_util" }
 
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9.14"

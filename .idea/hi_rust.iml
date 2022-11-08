@@ -8,11 +8,13 @@
       <sourceFolder url="file://$MODULE_DIR$/ex_common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ex_config/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ex_net/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ex_util/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/ts_config2/target" />
       <excludeFolder url="file://$MODULE_DIR$/ex_common/target" />
       <excludeFolder url="file://$MODULE_DIR$/ex_config/target" />
       <excludeFolder url="file://$MODULE_DIR$/ex_net/target" />
+      <excludeFolder url="file://$MODULE_DIR$/ex_util/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

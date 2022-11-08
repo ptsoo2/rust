@@ -378,6 +378,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "ex_util"
+version = "0.1.0"
+
+[[package]]
 name = "function_name"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -544,6 +548,7 @@ dependencies = [
  "ex_common",
  "ex_config",
  "ex_net",
+ "ex_util",
  "function_name",
  "futures",
  "libc",

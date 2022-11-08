@@ -10,15 +10,20 @@ use std::ops::Deref;
 use std::os::windows::io::AsRawSocket;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
+use std::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::{io, thread};
-use std::thread::spawn;
+use std::pin::Pin;
+use std::thread::{JoinHandle, sleep, spawn};
 use std::time::Duration;
 use chrono::Local;
 use ex_common::{
 	log, function
 };
+use ex_util::stop_handle::{
+	StopToken, StopHandle
+};
+
 use ex_config::config::{CConfig, EConfigLoadType};
 use rocket::config::Environment::Production;
 
@@ -57,6 +62,7 @@ mod command_line;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 use libc;
+
 use crate::tests::_test_acceptor;
 
 struct Worker {
@@ -156,14 +162,56 @@ fn regist_signal_handler() -> Receiver<()> {
 	rx
 }
 
+struct UnSafeBool {
+	flag_: *const bool
+}
+
+impl UnSafeBool {
+	fn new(source: &bool) -> Self {
+		Self {
+			flag_: source
+		}
+	}
+	
+	fn peek(&self) -> bool {
+		unsafe {
+			*self.flag_
+		}
+	}
+}
+
+unsafe impl Send for UnSafeBool {}
+
 fn main() -> anyhow::Result<()> {
-	let rx = regist_signal_handler();
+	let mut flag = false;
+	let flag2 = UnSafeBool::new(&flag);
 	
-	let mut _pool = ThreadPool::new(10);
+	let jh = spawn(move || {
+		log!("spawn!!");
+		let mut seconds = 1;
+		while flag2.peek() == false {
+			log!("in thread {} seconds", seconds);
+			sleep(Duration::from_secs(1));
+			seconds += 1;
+		}
+		log!("exit thread!!");
+	});
 	
-	rx.recv().expect("Could not receive from channel");
+	log!("request stop (after 3 seconds...");
+	sleep(Duration::from_secs(20));
+	flag = true;
 	
-	println!("Got it! Exiting...");
+	log!("wait for join...");
+	jh.join().unwrap();
+	log!("exit main thread!!");
+	
+	// let rx = regist_signal_handler();
+	//
+	// let mut _pool = ThreadPool::new(10);
+	//
+	// rx.recv().expect("Could not receive from channel");
+	//
+	// println!("Got it! Exiting...");
 	
 	Ok(())
 }
