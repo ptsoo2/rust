@@ -5,17 +5,18 @@ extern crate rocket;
 
 use std::borrow::{Borrow, BorrowMut};
 use std::cell::{Cell, UnsafeCell};
-use std::net::{TcpListener, TcpStream};
+use std::net::{Shutdown, TcpListener, TcpStream};
 use std::ops::Deref;
 use std::os::windows::io::AsRawSocket;
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, RecvError, Sender};
 use std::{io, thread};
 use std::pin::Pin;
 use std::thread::{JoinHandle, sleep, spawn};
 use std::time::Duration;
+use anyhow::bail;
 use chrono::Local;
 use ex_common::{
 	log, function
@@ -25,131 +26,16 @@ use ex_util::stop_handle::{
 };
 
 use ex_config::config::{CConfig, EConfigLoadType};
-use rocket::config::Environment::Production;
+
+use rocket::{Build, Rocket};
 
 use crate::server::mount;
-use crate::server_common::{launch_all, make_launch_hint};
+use crate::server_common::{_make_rocket, launch_all, LaunchHint, make_launch_hint};
 
 mod tests;
 mod server_common;
 mod server;
 mod command_line;
-
-// fn main() -> anyhow::Result<()> {
-//
-// 	// parse commandLine
-// 	let command_line = command_line::CommandLine::default()
-// 		.load()?;
-//
-// 	// load config
-// 	let config = CConfig::default()
-// 		.load(command_line.config_file_path_, EConfigLoadType::YAML)?;
-//
-// 	let launch_hint = make_launch_hint(
-// 		&config.server_group_.server_group,
-// 		&[mount, mount]
-// 	)?;
-//
-// 	// launch
-// 	launch_all(launch_hint)?;
-//
-// 	println!("run out spawn rocket");
-// 	loop {
-// 		std::thread::sleep(Duration::from_millis(1))
-// 	}
-// }
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-use libc;
-
-use crate::tests::_test_acceptor;
-
-struct Worker {
-	id_: usize,
-	thread_: Option<thread::JoinHandle<()>>,
-}
-
-impl Worker {
-	fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>) -> Worker {
-		let stop_handle = Arc::new(AtomicBool::new(false));
-		let _clone = stop_handle.clone();
-		let thread = spawn(move || {
-			log!("Worker {id} spawned.");
-			loop {
-				let message = receiver.lock().unwrap().recv();
-				match message {
-					Ok(job) => {
-						log!("Worker {id} got a job; executing.");
-						job();
-					},
-					Err(_) => {
-						//log!("Worker {id}, disconnected; shutting down.");
-						break;
-					}
-				}
-				
-				thread::sleep(Duration::from_millis(1));
-			}
-		});
-		
-		Worker {
-			id_: id,
-			thread_: Some(thread),
-		}
-	}
-	
-	fn start(&mut self, _receiver: Arc<Mutex<Receiver<Job>>>) {}
-}
-
-type Job = Box<dyn FnOnce() + Send + 'static>;
-
-pub struct ThreadPool {
-	workers_: Vec<Worker>,
-	sender_: Option<Sender<Job>>,
-}
-
-impl ThreadPool {
-	pub fn new(size: usize) -> ThreadPool {
-		let (sender, receiver) = channel();
-		let receiver = Arc::new(Mutex::new(receiver));
-		
-		let mut workers = Vec::with_capacity(size);
-		
-		for id in 0..size {
-			let mut worker = Worker::new(id, receiver.clone());
-			worker.start(Arc::clone(&receiver));
-			workers.push(worker);
-		}
-		
-		ThreadPool {
-			workers_: workers,
-			sender_: Some(sender),
-		}
-	}
-	
-	pub fn execute<F>(&self, f: F)
-	                  where F: FnOnce() + Send + 'static
-	{
-		let job = Box::new(f);
-		self.sender_.as_ref().unwrap().send(job).unwrap();
-	}
-}
-
-impl Drop for ThreadPool {
-	fn drop(&mut self) {
-		drop(self.sender_.take());
-		
-		for worker in &mut self.workers_ {
-			log!("Shutting down worker({})", worker.id_);
-			if let Some(thread) = worker.thread_.take() {
-				thread.join().unwrap();
-			}
-		}
-	}
-}
-
-fn handle_connection(_stream: TcpStream) {}
 
 fn regist_signal_handler() -> Receiver<()> {
 	let (tx, rx) = channel();
@@ -162,56 +48,43 @@ fn regist_signal_handler() -> Receiver<()> {
 	rx
 }
 
-struct UnSafeBool {
-	flag_: *const bool
+#[get("/")]
+fn test() {
+	println!("test!!!!!!");
 }
 
-impl UnSafeBool {
-	fn new(source: &bool) -> Self {
-		Self {
-			flag_: source
-		}
-	}
+#[rocket::main]
+async fn main() -> anyhow::Result<()> {
+	let launch_hint = LaunchHint::default();
 	
-	fn peek(&self) -> bool {
-		unsafe {
-			*self.flag_
-		}
-	}
-}
-
-unsafe impl Send for UnSafeBool {}
-
-fn main() -> anyhow::Result<()> {
-	let mut flag = false;
-	let flag2 = UnSafeBool::new(&flag);
+	let rocket = _make_rocket(&launch_hint).await?;
+	let rocket = rocket.mount("/", routes![test]);
+	rocket.launch().await?;
 	
-	let jh = spawn(move || {
-		log!("spawn!!");
-		let mut seconds = 1;
-		while flag2.peek() == false {
-			log!("in thread {} seconds", seconds);
-			sleep(Duration::from_secs(1));
-			seconds += 1;
-		}
-		log!("exit thread!!");
-	});
-	
-	log!("request stop (after 3 seconds...");
-	sleep(Duration::from_secs(20));
-	flag = true;
-	
-	log!("wait for join...");
-	jh.join().unwrap();
-	log!("exit main thread!!");
-	
+	// rx.recv().unwrap();
+	Ok(())
 	// let rx = regist_signal_handler();
 	//
-	// let mut _pool = ThreadPool::new(10);
+	// // parse commandLine
+	// let command_line = command_line::CommandLine::default()
+	// 	.load()?;
 	//
-	// rx.recv().expect("Could not receive from channel");
+	// // load config
+	// let config = CConfig::default()
+	// 	.load(command_line.config_file_path_, EConfigLoadType::YAML)?;
 	//
-	// println!("Got it! Exiting...");
-	
-	Ok(())
+	// let launch_hint = make_launch_hint(
+	// 	&config.server_group_.server_group,
+	// 	&[mount, mount]
+	// )?;
+	//
+	// // launch
+	// launch_all(launch_hint)?;
+	//
+	// println!("run out spawn rocket");
+	// match rx.recv()
+	// {
+	// 	Ok(_) => { Ok(()) }
+	// 	Err(e) => { bail!(e); }
+	// }
 }

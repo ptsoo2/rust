@@ -19,8 +19,8 @@ pub struct Naming {
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Customize {
-	pub env_type: u8,
-	pub worker_count: u16,
+	pub env_type: String,
+	pub worker_count: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -28,6 +28,16 @@ pub struct ServerConfig {
 	pub host: Host,
 	pub naming: Naming,
 	pub customize: Customize,
+}
+
+impl Default for ServerConfig {
+	fn default() -> Self {
+		Self {
+			host: internal::host(),
+			naming: internal::naming(),
+			customize: internal::customize(),
+		}
+	}
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -43,34 +53,34 @@ impl Default for ServerGroup {
 	}
 }
 
-// mod internal {
-// 	use crate::config_format::{Customize, Host, internal, Naming, ServerConfig};
-//
-// 	pub fn host() -> Host {
-// 		Host {
-// 			ip: ("").to_owned(),
-// 			port: 30002,
-// 		}
-// 	}
-//
-// 	pub fn naming() -> Naming {
-// 		Naming {
-// 			service_name: ("123123").to_owned(),
-// 		}
-// 	}
-//
-// 	pub fn customize() -> Customize {
-// 		Customize {
-// 			env_type: 0,
-// 			worker_count: 5,
-// 		}
-// 	}
-//
-// 	pub fn server_config() -> ServerConfig {
-// 		ServerConfig {
-// 			host: internal::host(),
-// 			naming: internal::naming(),
-// 			customize: internal::customize(),
-// 		}
-// 	}
-// }
+mod internal {
+	use crate::config_format::{Customize, Host, internal, Naming, ServerConfig};
+	
+	pub fn host() -> Host {
+		Host {
+			ip: ("127.0.0.1").to_owned(),
+			port: 30002,
+		}
+	}
+	
+	pub fn naming() -> Naming {
+		Naming {
+			service_name: ("123123").to_owned(),
+		}
+	}
+	
+	pub fn customize() -> Customize {
+		Customize {
+			env_type: ("debug").to_owned(),
+			worker_count: 5,
+		}
+	}
+	
+	pub fn server_config() -> ServerConfig {
+		ServerConfig {
+			host: internal::host(),
+			naming: internal::naming(),
+			customize: internal::customize(),
+		}
+	}
+}

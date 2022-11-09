@@ -2,7 +2,7 @@
 server_group:
   -
     host:
-      ip: "localhost"
+      ip: "127.0.0.1"
       port: 30002
     naming:
       service_name: "test_service"
@@ -11,7 +11,7 @@ server_group:
       worker_count: 10
   -
     host:
-      ip: "localhost"
+      ip: "127.0.0.1"
       port: 30003
     naming:
       service_name: "test_service2"
