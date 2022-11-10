@@ -7,7 +7,7 @@ server_group:
     naming:
       service_name: "test_service"
     customize:
-      env_type: 0
+      env_type: "debug"
       worker_count: 10
   -
     host:
@@ -16,5 +16,5 @@ server_group:
     naming:
       service_name: "test_service2"
     customize:
-      env_type: 0
+      env_type: "debug"
       worker_count: 10

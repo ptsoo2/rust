@@ -1,5 +1,9 @@
-use crate::{function, log};
-use chrono::Local;
+pub use crate::{function, log};
+
+pub extern crate chrono;
+
+pub use chrono::Local;
+
 use std::{env, io};
 
 pub fn get_current_path() -> io::Result<std::path::PathBuf> {
@@ -11,7 +15,7 @@ pub fn get_current_path_str() -> String {
 }
 
 pub fn print_type_of_name<T>(_: &T) {
-	log!("{}", std::any::type_name::<T>())
+	log!("{}", std::any::type_name::<T>());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +35,7 @@ macro_rules! function {
 macro_rules! log {
     ($($arg:tt)*) => {{
 	    print!("{{\"dt\":\"{}\", \"wh\":{}({}), \"ct:\"",
-	    Local::now().format("%Y-%m-%dT%H:%M:%S"),function!(),line!());
+	    $crate::common::Local::now().format("%Y-%m-%dT%H:%M:%S"),$crate::common::function!(),line!());
 		print!($($arg)*);
 	    println!("}}");
     }}

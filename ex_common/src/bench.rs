@@ -1,18 +1,17 @@
-use crate::{function, log};
-use chrono::Local;
+use crate::{log};
 use std::time::Instant;
 
-pub fn bench_multiple<F>(name: &str, count: u32, mut inner: F)
-where
-    F: FnMut(),
+pub fn bench_multiple<F>(name: &str, count: u32, mut iter: F)
+                         where
+	                         F: FnMut(),
 {
-    let start = Instant::now();
-
-    for _ in 0..count {
-        inner();
-    }
-
-    let duration = start.elapsed();
-
-    log!("[{}] count: {}, duration: {:?}", name, count, duration);
+	let start = Instant::now();
+	
+	for _ in 0..count {
+		iter();
+	}
+	
+	let duration = start.elapsed();
+	
+	log!("[{}] count: {}, duration: {:?}", name, count, duration);
 }

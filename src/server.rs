@@ -1,6 +1,6 @@
 use rocket::{Build, Rocket};
 
-#[get("/index", format = "json")]
+#[get("/index")]
 fn index() -> &'static str {
 	"{\"version\": \"1.11.1\"}"
 }

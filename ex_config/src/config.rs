@@ -1,8 +1,7 @@
 use std::collections::HashSet;
-use chrono::Local;
 
 use anyhow::bail;
-use ex_common::{function, log};
+use ex_common::{log};
 use std::fs;
 use crate::config_format::ServerGroup;
 

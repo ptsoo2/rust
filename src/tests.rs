@@ -3,7 +3,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::{Acquire, Release};
-use std::sync::mpsc::channel;
+
 use std::thread;
 use std::thread::spawn;
 use ex_common::{function, log};

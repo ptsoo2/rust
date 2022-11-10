@@ -76,7 +76,7 @@ mod internal {
 		}
 	}
 	
-	pub fn server_config() -> ServerConfig {
+	pub fn _server_config() -> ServerConfig {
 		ServerConfig {
 			host: internal::host(),
 			naming: internal::naming(),

@@ -414,6 +414,10 @@ dependencies = [
 [[package]]
 name = "ex_util"
 version = "0.1.0"
+dependencies = [
+ "ctrlc",
+ "ex_common",
+]
 
 [[package]]
 name = "fastrand"
