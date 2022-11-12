@@ -1,33 +1,8 @@
-use std::{error, fmt};
-use std::error::Error as _StdError;
-use std::sync::Arc;
-use std::time::Duration;
-use r2d2::{Builder, CustomizeConnection, HandleError, HandleEvent, ManageConnection, Pool};
-use redis::{Cmd, Connection, ConnectionInfo, ConnectionLike, IntoConnectionInfo, RedisConnectionInfo, RedisError};
+use r2d2::{Builder, Pool};
+use redis::{Cmd, Connection, ConnectionInfo, ConnectionLike, RedisConnectionInfo, RedisError};
 use redis::ConnectionAddr::Tcp;
-
-pub fn make_connection_info(ip: &str, port: u16, dbNo: i64, username: Option<&str>, password: Option<&str>) -> ConnectionInfo {
-	ConnectionInfo {
-		addr: Tcp(ip.to_owned(), port),
-		redis: RedisConnectionInfo {
-			db: dbNo,
-			username: if let Some(username) = username { Some(username.to_owned()) } else { None },
-			password: if let Some(password) = password { Some(password.to_owned()) } else { None },
-		},
-	}
-}
-
-pub struct Config<C, E> {
-	pub max_size: u32,
-	pub min_idle: Option<u32>,
-	pub test_on_check_out: bool,
-	pub max_lifetime: Option<Duration>,
-	pub idle_timeout: Option<Duration>,
-	pub connection_timeout: Duration,
-	// pub error_handler: Box<dyn HandleError<E>>,
-	// pub event_handler: Box<dyn HandleEvent>,
-	pub connection_customizer: Box<dyn CustomizeConnection<C, E>>,
-}
+use crate::builder_entry;
+use crate::builder_entry::Config;
 
 pub struct Stub {
 	connection_info_: redis::ConnectionInfo,
@@ -52,32 +27,32 @@ impl r2d2::ManageConnection for Stub {
 	}
 }
 
-type builder_t = Builder<Stub>;
-type pool_t = Pool<Stub>;
-pub type pool_config_t = Config<Stub, RedisError>;
-type fn_build_hook_t = Option<fn(&mut builder_t)>;
+type StubBuilder = Builder<Stub>;
+type StubPool = Pool<Stub>;
+pub type StubConfig = Config<Stub>;
+type FnStubBuildHook = Option<fn(&mut StubBuilder)>;
 
-#[derive(Debug)]
-pub struct NamespaceCustomizer {}
-
-impl CustomizeConnection<Stub, RedisError> for NamespaceCustomizer {
-	fn on_acquire(&self, stub: &mut Stub) -> Result<(), RedisError> {
-		Ok(())
+pub fn make_connection_info(ip: &str, port: u16, db_no: i64, username: Option<&str>, password: Option<&str>) -> ConnectionInfo {
+	ConnectionInfo {
+		addr: Tcp(ip.to_owned(), port),
+		redis: RedisConnectionInfo {
+			db: db_no,
+			username: if let Some(username) = username { Some(username.to_owned()) } else { None },
+			password: if let Some(password) = password { Some(password.to_owned()) } else { None },
+		},
 	}
 }
 
 pub fn make_pool_default(
 	connnection_info: ConnectionInfo,
-	config: pool_config_t,
-	fn_build_hook: fn_build_hook_t
-) -> anyhow::Result<pool_t> {
-	let fn_configured_pool = || {
-		let builder = Builder::new()
-			.max_size(config.max_size);
-		builder
-	};
+	config: StubConfig,
+	fn_build_hook: FnStubBuildHook
+)
+	-> anyhow::Result<StubPool>
+{
+	let mut builder = builder_entry::make_configured_builder::<Stub>(config);
 	
-	let mut builder = fn_configured_pool();
+	// hooking
 	if fn_build_hook.is_none() == false {
 		fn_build_hook.unwrap()(&mut builder);
 	}
