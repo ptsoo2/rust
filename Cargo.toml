@@ -22,6 +22,7 @@ futures = "0.3.25"
 tokio = "1.21.2"
 ctrlc = "3.2.3"
 libc = "0.2.137"
+amiquip = "0.4"
 
 [dev-dependencies]
 
