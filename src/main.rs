@@ -1,6 +1,7 @@
 #![feature(decl_macro)]
 #[macro_use]
 extern crate rocket;
+extern crate core;
 
 mod command_line;
 mod server;
@@ -8,7 +9,8 @@ mod server_common;
 
 use ex_config::config::{CConfig, EConfigLoadType};
 use ex_database::redis_entry;
-use redis::{Cmd, ConnectionLike, Pipeline};
+use ex_database::redis_value::RedisValue;
+use redis::{Cmd, ConnectionLike, Pipeline, RedisResult, Value};
 use std::time::Duration;
 
 use crate::server::mount;
@@ -36,37 +38,49 @@ async fn main() -> anyhow::Result<()> {
 
         let mut conn = pool.get()?;
         {
-            let rpy = conn.req_command(Cmd::new().arg("PING"));
-
-            println!("{:?}", rpy);
+            let rpy = conn.req_command(Cmd::new().arg("PING"))?;
+            if let Value::Status(stat) = rpy {
+                println!("{}", stat);
+            }
         }
         {
             // 와.. 너무 쓰레기같이 써야하네..
-            let (rpy1, rpy2, rpy3): (String, String, String) = Pipeline::with_capacity(3)
+            let mut pipe = Pipeline::with_capacity(3);
+            let result: Vec<Value> = pipe
                 .cmd("PING")
                 .cmd("SET")
                 .arg("11111111111111")
                 .arg("222222222222")
                 .cmd("GET")
                 .arg("11111111111111")
+                .cmd("ZREVRANGE")
+                .arg("test_ranking")
+                .arg(0)
+                .arg(-1)
+                .arg("WITHSCORES")
                 .query(&mut conn)?;
 
-            println!("{}", rpy1);
-            println!("{}", rpy2);
-            println!("{}", rpy3);
+            let result = result.get(3).unwrap();
+            if let Value::Bulk(result) = result {
+                println!("{:?}", result);
+            }
         }
     }
 
-    let command_line = command_line::CommandLine::default().load()?;
-
-    // load config
-    let config = CConfig::default().load(command_line.config_file_path_, EConfigLoadType::YAML)?;
-
-    let launch_hint_list =
-        make_launch_hint_list(&config.server_group_.server_group, &[mount, mount])?;
-
-    // blocking launch
-    let _result = launch_all(launch_hint_list).await?;
+    // let command_line = command_line::CommandLine::default()
+    // 	.load()?;
+    //
+    // // load config
+    // let config = CConfig::default()
+    // 	.load(command_line.config_file_path_, EConfigLoadType::YAML)?;
+    //
+    // let launch_hint_list = make_launch_hint_list(
+    // 	&config.server_group_.server_group,
+    // 	&[mount, mount]
+    // )?;
+    //
+    // // blocking launch
+    // let _result = launch_all(launch_hint_list).await?;
 
     Ok(())
 }
