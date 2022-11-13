@@ -29,7 +29,7 @@ impl r2d2::ManageConnection for Stub {
 }
 
 type StubBuilder = Builder<Stub>;
-type StubPool = Pool<Stub>;
+pub(crate) type StubPool = Pool<Stub>;
 pub type StubConfig = Config<Stub>;
 type FnStubBuildHook = Option<fn(&mut StubBuilder)>;
 

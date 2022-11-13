@@ -41,22 +41,23 @@ impl fmt::Debug for Config {
 }
 
 impl Config {
-    pub fn load(mut self, path: String, load_type: EConfigLoadType) -> anyhow::Result<Config> {
+    pub fn create_and_load(path: String, load_type: EConfigLoadType) -> anyhow::Result<Config> {
         let str_path = &path[..];
         log!("config path: {}", str_path);
 
-        match load_type {
-            EConfigLoadType::YAML => self._load_from_yaml(str_path),
-            EConfigLoadType::XML => self._load_from_xml(str_path),
-            EConfigLoadType::JSON => self._load_from_json(str_path),
-            _ => {
-                todo!()
+        let str_config = fs::read_to_string(path)?;
+        let config = match load_type {
+            EConfigLoadType::YAML => serde_yaml::from_str::<Config>(&str_config[..])?,
+            EConfigLoadType::XML => todo!(),
+            EConfigLoadType::JSON => todo!(),
+            EConfigLoadType::_MAX_ => {
+                bail!("Invalid LoadType!!!");
             }
-        }?;
+        };
 
-        log!("config contents: {:?}", self.server_group);
-        self._verify()?;
-        Ok(self)
+        log!("config contents: {:?}", config);
+        config._verify()?;
+        Ok(config)
     }
 
     fn _verify(&self) -> anyhow::Result<()> {
@@ -68,24 +69,5 @@ impl Config {
             }
         }
         Ok(())
-    }
-
-    fn _load_from_yaml(&mut self, path: &str) -> anyhow::Result<()> {
-        let str_config = fs::read_to_string(path)?;
-        *self = serde_yaml::from_str::<Config>(&str_config[..])?;
-
-        Ok(())
-    }
-
-    fn _load_from_xml(&mut self, path: &str) -> anyhow::Result<()> {
-        let _str_config = fs::read_to_string(path)?;
-
-        todo!()
-    }
-
-    fn _load_from_json(&mut self, path: &str) -> anyhow::Result<()> {
-        let _str_config = fs::read_to_string(path)?;
-
-        todo!();
     }
 }

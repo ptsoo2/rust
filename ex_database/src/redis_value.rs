@@ -55,6 +55,16 @@ impl RedisValue {
         return self.is_type(ARRAY) == true;
     }
 
+    pub fn get_integer(&self) -> i64 {
+        assert_eq!(self.is_string(), true);
+        self.integer_
+    }
+
+    pub fn get_string(&self) -> &String {
+        assert_eq!(self.is_string(), true);
+        &self.string_
+    }
+
     fn _analyze(&mut self) {
         match &self.value_ {
             Value::Nil => {
@@ -63,6 +73,10 @@ impl RedisValue {
             Value::Int(value) => {
                 self.value_type_ = INTEGER;
                 self.integer_ = *value;
+            }
+            Value::Data(value) => {
+                self.value_type_ = STRING;
+                self.string_ = String::from_utf8_lossy(value.as_slice()).to_string();
             }
             Value::Status(value) => {
                 self.value_type_ = STRING;
