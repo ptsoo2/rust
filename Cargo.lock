@@ -551,6 +551,7 @@ name = "ex_database"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "ex_config",
  "r2d2",
  "redis",
 ]
