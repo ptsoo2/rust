@@ -81,27 +81,3 @@ pub fn make_pool_default(
     let pool = builder.build(stub)?;
     Ok(pool)
 }
-
-// // todo! 매크로화 하자..
-// pub fn get_int(value: &Value) -> anyhow::Result<i64> {
-//     if let Value::Int(value) = value {
-//         return Ok(*value);
-//     }
-//     bail!("not integer");
-// }
-
-// pub fn get_string(value: &Value) -> anyhow::Result<String> {
-//     if let Value::Data(value) = value {
-//         let a = String::from_utf8_lossy(value.as_slice());
-//         return Ok(a.to_string());
-//     }
-//     bail!("not string");
-// }
-
-// pub fn is_nil(value: &Value) -> bool {
-//     if (get_string(&value).is_err() == true) && (get_int(&value).is_err() == true) {
-//         return true;
-//     }
-
-//     return false;
-// }

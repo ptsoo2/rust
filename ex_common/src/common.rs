@@ -7,15 +7,15 @@ pub use chrono::Local;
 use std::{env, io};
 
 pub fn get_current_path() -> io::Result<std::path::PathBuf> {
-	env::current_dir()
+    env::current_dir()
 }
 
 pub fn get_current_path_str() -> String {
-	String::from(get_current_path().unwrap().as_os_str().to_str().unwrap())
+    String::from(get_current_path().unwrap().as_os_str().to_str().unwrap())
 }
 
 pub fn print_type_of_name<T>(_: &T) {
-	log!("{}", std::any::type_name::<T>());
+    log!("{}", std::any::type_name::<T>());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,6 +39,13 @@ macro_rules! log {
 		print!($($arg)*);
 	    println!("}}");
     }}
+}
+
+#[macro_export]
+macro_rules! get_ref_member {
+    ($self:ident, $mem_var:ident) => {
+        $self.$mem_var.as_ref().unwrap()
+    };
 }
 
 // continue macro
@@ -72,8 +79,8 @@ macro_rules! continue_fail_condition {
         match $res {
             false => {
                 continue;
-            },
-            _ =>  {}
+            }
+            _ => {}
         }
     };
 }
