@@ -58,7 +58,7 @@ pub fn make_connection_info(
     }
 }
 
-pub fn make_connection_info_from_config(redis_conf: &config_format::Redis) -> ConnectionInfo {
+pub fn make_connection_info_from_config(redis_conf: &config_format::RedisConfig) -> ConnectionInfo {
     let host = &redis_conf.host;
     make_connection_info(&host.ip[..], host.port, redis_conf.db_no, None, None)
 }

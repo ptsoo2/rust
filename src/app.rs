@@ -1,6 +1,6 @@
 use crate::{
     command_line::CommandLine,
-    database::{boot_redis, RedisPool},
+    database::{boot_redis, MapRedisPool, RedisPool},
     server::mount_port1,
     server::mount_port2,
     server_common,
@@ -12,13 +12,13 @@ use rocket::{Ignite, Rocket};
 pub struct App {
     command_line_: Option<CommandLine>,
     config_: Option<Config>,
-    redis_pool_: Option<RedisPool>,
+    map_redis_pool_: Option<MapRedisPool>,
 }
 
 pub static mut INSTANCE: App = App {
     command_line_: None,
     config_: None,
-    redis_pool_: None,
+    map_redis_pool_: None,
 };
 
 impl App {
@@ -49,8 +49,9 @@ impl App {
         get_ref_member!(self, config_)
     }
 
-    pub fn redis_pool(&'static self) -> &RedisPool {
-        get_ref_member!(self, redis_pool_)
+    pub fn redis_pool(&'static self, db_no: i64) -> Option<&RedisPool> {
+        let map = get_ref_member!(self, map_redis_pool_);
+        map.get(&db_no)
     }
 
     #[allow(unused)]
@@ -59,7 +60,7 @@ impl App {
     }
 
     fn _boot_database(&'static mut self) -> anyhow::Result<&'static mut App> {
-        self.redis_pool_ = Some(boot_redis(get_ref_member!(self, config_))?);
+        self.map_redis_pool_ = Some(boot_redis(get_ref_member!(self, config_))?);
         Ok(self)
     }
 }

@@ -60,12 +60,12 @@ impl Default for ServerGroup {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-pub struct Redis {
+pub struct RedisConfig {
     pub host: Host,
     pub db_no: i64,
 }
 
-impl Default for Redis {
+impl Default for RedisConfig {
     fn default() -> Self {
         Self {
             host: Host {
@@ -74,5 +74,16 @@ impl Default for Redis {
             },
             db_no: 1,
         }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct RedisGroup {
+    pub data: Vec<RedisConfig>,
+}
+
+impl Default for RedisGroup {
+    fn default() -> Self {
+        Self { data: Vec::new() }
     }
 }

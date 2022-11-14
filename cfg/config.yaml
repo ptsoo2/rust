@@ -18,7 +18,20 @@ server_group:
         env_type: "debug"
         worker_count: 10
 redis_conf:
-  host:
-    ip: "127.0.0.1"
-    port: 6379
-  db_no: 0
+  data:
+    - host:
+        ip: "127.0.0.1"
+        port: 6379
+      db_no: 0
+    - host:
+        ip: "127.0.0.1"
+        port: 6379
+      db_no: 1
+    - host:
+        ip: "127.0.0.1"
+        port: 6379
+      db_no: 2
+    - host:
+        ip: "127.0.0.1"
+        port: 6379
+      db_no: 3

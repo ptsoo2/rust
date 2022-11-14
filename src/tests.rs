@@ -193,7 +193,7 @@ fn singleton_test() -> anyhow::Result<()> {
 
     // singleton test
     let join_handle = thread::spawn(|| -> anyhow::Result<()> {
-        let mut conn = app::get_instance().redis_pool().get()?;
+        let mut conn = app::get_instance().redis_pool(0).unwrap().get()?;
 
         let rpy = conn.req_command(redis::Cmd::new().arg("GET").arg("1231231231"))?;
         let rpy = RedisValue::new(rpy);

@@ -10,14 +10,14 @@ use crate::config_format;
 #[derive(Clone, Deserialize, Serialize, PartialEq)]
 pub struct Config {
     pub server_group: config_format::ServerGroup,
-    pub redis_conf: config_format::Redis,
+    pub redis_conf: config_format::RedisGroup,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
             server_group: config_format::ServerGroup::default(),
-            redis_conf: config_format::Redis::default(),
+            redis_conf: config_format::RedisGroup::default(),
         }
     }
 }
@@ -61,13 +61,24 @@ impl Config {
     }
 
     fn _verify(&self) -> anyhow::Result<()> {
+        // 포트 중복 체크
         let mut port_verifier = HashSet::new();
-        for _server_config in &self.server_group.data {
-            let port = _server_config.host.port;
+        for server_conf in &self.server_group.data {
+            let port = server_conf.host.port;
             if port_verifier.insert(port) == false {
                 bail!("duplicate port({})", port);
             }
         }
+
+        // db 넘버 중복 체크
+        let mut db_no_verifier = HashSet::new();
+        for redis_conf in &self.redis_conf.data {
+            let db_no = redis_conf.db_no;
+            if db_no_verifier.insert(db_no) == false {
+                bail!("duplicate db_no({})", db_no);
+            }
+        }
+
         Ok(())
     }
 }
