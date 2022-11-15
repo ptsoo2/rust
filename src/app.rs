@@ -34,32 +34,33 @@ impl App {
         )?);
 
         // database
-        self._boot_database()
+        self._boot_third_party()
     }
 
     pub async fn launch(&'static self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
-        let server_config_list = &self.config().server_group.data;
+        let server_config_list = &self.get_config().server_group.data;
         let launch_hint_list =
             server_common::make_launch_hint_list(server_config_list, &[mount_port1, mount_port2])?;
 
         server_common::launch_all(launch_hint_list).await
     }
 
-    pub fn config(&'static self) -> &Config {
+    pub fn get_config(&'static self) -> &Config {
         get_ref_member!(self, config_)
     }
 
-    pub fn redis_pool(&'static self, db_no: i64) -> Option<&RedisPool> {
+    pub fn get_redis_pool(&'static self, db_no: i64) -> Option<&RedisPool> {
         let map = get_ref_member!(self, map_redis_pool_);
         map.get(&db_no)
     }
 
     #[allow(unused)]
-    pub fn command_line(&'static self) -> &CommandLine {
+    pub fn get_command_line(&'static self) -> &CommandLine {
         get_ref_member!(self, command_line_)
     }
 
-    fn _boot_database(&'static mut self) -> anyhow::Result<&'static mut App> {
+    fn _boot_third_party(&'static mut self) -> anyhow::Result<&'static mut App> {
+        // redis
         self.map_redis_pool_ = Some(boot_redis(get_ref_member!(self, config_))?);
         Ok(self)
     }

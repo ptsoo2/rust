@@ -87,3 +87,46 @@ impl Default for RedisGroup {
         Self { data: Vec::new() }
     }
 }
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct MQPublishExchange {
+    pub direct: String,
+    pub fanout: String,
+}
+
+impl Default for MQPublishExchange {
+    fn default() -> Self {
+        Self {
+            direct: String::new(),
+            fanout: String::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct MQConf {
+    pub mem_channel_bound: usize,
+    pub buffered_writes_high_water: usize,
+    pub buffered_writes_low_water: usize,
+    pub user: String,
+    pub password: String,
+    pub host: Host,
+    pub publish_exchange: MQPublishExchange,
+}
+
+impl Default for MQConf {
+    fn default() -> Self {
+        Self {
+            mem_channel_bound: 16,
+            buffered_writes_high_water: 16 << 20,
+            buffered_writes_low_water: 0,
+            user: String::new(),
+            password: String::new(),
+            host: Host {
+                ip: ("127.0.0.1").to_owned(),
+                port: 5672,
+            },
+            publish_exchange: MQPublishExchange::default(),
+        }
+    }
+}

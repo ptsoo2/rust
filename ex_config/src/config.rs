@@ -11,6 +11,7 @@ use crate::config_format;
 pub struct Config {
     pub server_group: config_format::ServerGroup,
     pub redis_conf: config_format::RedisGroup,
+    pub mq_conf: config_format::MQConf,
 }
 
 impl Default for Config {
@@ -18,6 +19,7 @@ impl Default for Config {
         Self {
             server_group: config_format::ServerGroup::default(),
             redis_conf: config_format::RedisGroup::default(),
+            mq_conf: config_format::MQConf::default(),
         }
     }
 }
@@ -36,6 +38,7 @@ impl fmt::Debug for Config {
         f.debug_struct("Config")
             .field("server_group", &self.server_group)
             .field("redis_conf", &self.redis_conf)
+            .field("mq_conf", &self.mq_conf)
             .finish()
     }
 }
