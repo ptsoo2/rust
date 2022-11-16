@@ -48,6 +48,13 @@ macro_rules! get_ref_member {
     };
 }
 
+#[macro_export]
+macro_rules! get_mut_ref_member {
+    ($self:ident, $mem_var:ident) => {
+        $self.$mem_var.as_mut().unwrap()
+    };
+}
+
 // continue macro
 #[macro_export]
 macro_rules! continue_fail_result {

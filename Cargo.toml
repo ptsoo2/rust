@@ -23,9 +23,10 @@ futures = "0.3.25"
 tokio = "1.21.2"
 ctrlc = "3.2.3"
 libc = "0.2.137"
-amiquip = "0.4"
 redis = "0.22.1"
 r2d2 = "0.8.10"
+lapin = "2.1.1"
+
 
 [dev-dependencies]
 
