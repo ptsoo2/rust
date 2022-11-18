@@ -37,8 +37,7 @@ async fn main() -> anyhow::Result<()> {
             Ok(context)
         }
         .boxed()
-    })
-    .await?;
+    });
 
     // app::get_instance().init()?.launch().await?;
     // 해결

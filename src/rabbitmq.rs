@@ -135,11 +135,11 @@ pub mod amqp {
     }
 
     impl MQRunnerBase {
-        pub async fn new(fn_recover: FnRecover) -> anyhow::Result<Self> {
-            Ok(Self {
+        pub fn new(fn_recover: FnRecover) -> Self {
+            Self {
                 context_: None,
                 fn_recover_: fn_recover,
-            })
+            }
         }
 
         #[allow(unused)]
