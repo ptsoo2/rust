@@ -1,15 +1,12 @@
 pub mod amqp {
     use ex_common::common::log;
     use ex_config::config_format;
-    use futures::future::BoxFuture;
-    use futures::Future;
 
     use std::collections::BTreeMap;
-    use std::error::Error;
-    use std::io::Stderr;
     use std::pin::Pin;
 
     use anyhow::{bail, Ok};
+    use futures::Future;
 
     use lapin::options::{BasicPublishOptions, ExchangeDeclareOptions};
     use lapin::protocol::basic::AMQPProperties;
@@ -128,18 +125,28 @@ pub mod amqp {
     type ContextBoxFuture = Pin<Box<dyn Future<Output = anyhow::Result<MQContext>> + Send>>;
     type FnRecover = fn() -> ContextBoxFuture;
 
+    /////////////////////////////////////////////////////////////////////////////////
     pub struct MQRunnerBase {
-        context_: MQContext,
+        context_: Option<MQContext>,
         fn_recover_: FnRecover,
+        // todo! join_handle
     }
 
     impl MQRunnerBase {
         pub async fn new(fn_recover: FnRecover) -> anyhow::Result<Self> {
-            let context = fn_recover().await?;
             Ok(Self {
-                context_: context,
+                context_: None,
                 fn_recover_: fn_recover,
             })
+        }
+
+        pub async fn start() {}
+
+        async fn _recover(&mut self) -> anyhow::Result<()> {
+            self.context_ = None; // todo! is required??
+            let new_context = (self.fn_recover_)().await?;
+            self.context_ = Some(new_context);
+            Ok(())
         }
     }
 
