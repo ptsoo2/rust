@@ -14,35 +14,32 @@ mod server;
 mod server_common;
 mod tests;
 
-pub struct TaskQueue {}
+use futures::FutureExt;
+use lapin::ExchangeKind;
 
-use std::{error::Error, future::Future, pin::Pin};
-
-use ex_common::common::print_type_of_name;
-use futures::{future::BoxFuture, FutureExt};
-use libc::c_void;
-use rabbitmq::amqp::MQContext;
-
-pub struct Test {
-    future: Pin<Box<dyn Future<Output = bool>>>,
-}
-
-// Result<bool, Error>
-fn test() -> BoxFuture<'static, Result<bool, ()>> {
-    Box::pin(async { 
-        Ok(true) 
-    })
-}
-
-async fn test2() {
-    let _a = test;
-
-    let a = Box::pin(_a());
-}
+use rabbitmq::amqp::{MQContext, MQRunnerBase};
 
 #[rocket::main]
 async fn main() -> anyhow::Result<()> {
-    app::get_instance().init()?.launch().await?;
+    app::get_instance().init()?;
+
+    let _runner = MQRunnerBase::new(|| {
+        async move {
+            //
+            let mq_conf = &app::get_instance().get_config().mq_conf;
+            let mut context = MQContext::new(mq_conf).await?;
+            context
+                .channel()
+                .await?
+                .declare_exchange(1, "game_server.direct", ExchangeKind::Direct)
+                .await?;
+            Ok(context)
+        }
+        .boxed()
+    })
+    .await?;
+
+    // app::get_instance().init()?.launch().await?;
     // 해결
     //      recover 로직이 필요하다.
     //      publish 실패시 n번 retry 가 필요할거고,

@@ -1,10 +1,12 @@
 pub mod amqp {
     use ex_common::common::log;
     use ex_config::config_format;
+    use futures::future::BoxFuture;
     use futures::Future;
 
     use std::collections::BTreeMap;
     use std::error::Error;
+    use std::io::Stderr;
     use std::pin::Pin;
 
     use anyhow::{bail, Ok};
@@ -27,7 +29,7 @@ pub mod amqp {
 
     impl MQContext {
         pub async fn new(mq_conf: &Config) -> anyhow::Result<Self> {
-            let conn = _connect(mq_conf).await?;
+            let conn = _make_connection(mq_conf).await?;
             Ok(Self {
                 conf_: mq_conf.clone(),
                 conn_: conn,
@@ -110,7 +112,7 @@ pub mod amqp {
 
         async fn _reconnect(&mut self) -> anyhow::Result<&mut Self> {
             self.close().await?;
-            self.conn_ = _connect(&self.conf_).await?;
+            self.conn_ = _make_connection(&self.conf_).await?;
             Ok(self)
         }
 
@@ -119,45 +121,29 @@ pub mod amqp {
         }
     }
 
-    async fn _connect(mq_conf: &Config) -> anyhow::Result<Connection, lapin::Error> {
+    async fn _make_connection(mq_conf: &Config) -> anyhow::Result<Connection, lapin::Error> {
         Connection::connect(&_into_uri(mq_conf)[..], _into_connect_properties(mq_conf)).await
     }
 
+    type ContextBoxFuture = Pin<Box<dyn Future<Output = anyhow::Result<MQContext>> + Send>>;
+    type FnRecover = fn() -> ContextBoxFuture;
+
     pub struct MQRunnerBase {
-        context_: Option<MQContext>,
-        //fn_init_: async fn(),
+        context_: MQContext,
+        fn_recover_: FnRecover,
     }
 
-    // type FnInit = fn(&MQContext) -> Result<MQContext, lapin::Error>;
+    impl MQRunnerBase {
+        pub async fn new(fn_recover: FnRecover) -> anyhow::Result<Self> {
+            let context = fn_recover().await?;
+            Ok(Self {
+                context_: context,
+                fn_recover_: fn_recover,
+            })
+        }
+    }
 
-    //  impl MQRunnerBase {
-    //      async fn new(mq_conf: &Config, fn_init: FnInit) {
-    //         async move || ->anyhow::Result<()>{
-    //             let a = MQContext::new(&mq_conf).await?;
-    //         }
-    //      }
-    //             Wrapper::new(|mq_conf: &config_format::MQConf| {
-    //                 Box::pin(async {
-    //                     let conf = mq_conf.clone();
-    //                     let a = MQContext::new(&conf).await?;
-    //                     Ok(a)
-    //                 })
-    //             });
-    //         Self { context_: None }
-    //}
-    //         let wrapped_init: Result<MQContext, lapin::Error> =
-    //             async move || -> Result<MQContext, lapin::Error> {
-    //                 let context = MQContext::new(&mq_conf).await?;
-    //                 let a = fn_init(&context)?;
-    //                 Ok(a)
-    //             };
-
-    //         Self { context_: None }
-    //     }
-
-    //     fn _recover(&mut self) {}
-    //}
-
+    /////////////////////////////////////////////////////////////////////////////////
     fn _into_uri(mq_conf: &Config) -> String {
         ("amqp://").to_owned()
             + &mq_conf.user
