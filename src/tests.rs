@@ -183,10 +183,8 @@ pub fn _test_acceptor() {
 pub async fn test_mq_publish() -> anyhow::Result<()> {
     let conf = app::get_instance().get_config();
 
-    let mut context = MQContext::new(&conf.mq_conf)?;
+    let mut context = MQContext::new(&conf.mq_conf).await?;
     context
-        .connect()
-        .await?
         .channel()
         .await?
         .declare_exchange(1, "game_server.direct", ExchangeKind::Direct)

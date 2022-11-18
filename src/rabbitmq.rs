@@ -1,66 +1,76 @@
 pub mod amqp {
     use ex_common::common::log;
-    use lapin::options::{BasicPublishOptions, ExchangeDeclareOptions};
-    use lapin::protocol::basic::AMQPProperties;
+    use ex_config::config_format;
+    use futures::Future;
 
     use std::collections::BTreeMap;
+    use std::error::Error;
+    use std::pin::Pin;
 
-    use anyhow::bail;
-    use ex_common::{get_mut_ref_member, get_ref_member};
-    use ex_config::config_format;
+    use anyhow::{bail, Ok};
 
+    use lapin::options::{BasicPublishOptions, ExchangeDeclareOptions};
+    use lapin::protocol::basic::AMQPProperties;
     use lapin::types::AMQPValue::LongInt;
-
     use lapin::types::FieldTable;
-    use lapin::{Channel, Connection, ConnectionProperties, ConnectionStatus, ExchangeKind};
+    use lapin::{Channel, Connection, ConnectionProperties, ExchangeKind};
 
     type ChannelNo = u16;
     type Config = config_format::MQConf;
 
-    struct InnerContext {
+    pub struct MQContext {
+        #[allow(unused)]
+        conf_: Config,
         conn_: Connection,
         map_channel_: BTreeMap<ChannelNo, Channel>,
     }
 
-    impl InnerContext {
-        fn new(conn: Connection) -> Self {
-            Self {
+    impl MQContext {
+        pub async fn new(mq_conf: &Config) -> anyhow::Result<Self> {
+            let conn = _connect(mq_conf).await?;
+            Ok(Self {
+                conf_: mq_conf.clone(),
                 conn_: conn,
                 map_channel_: BTreeMap::default(),
-            }
+            })
         }
 
-        fn status(&self) -> &ConnectionStatus {
-            self.conn_.status()
+        pub fn is_connected(&self) -> bool {
+            self.conn_.status().connected()
         }
 
-        async fn channel(&mut self) -> anyhow::Result<ChannelNo> {
-            let channel = self.conn_.create_channel().await?;
-            let channel_id = channel.id();
-
-            if let Some(v) = self.map_channel_.insert(channel_id, channel) {
-                bail!("already exist channel({})", v.id());
-            }
-
-            Ok(channel_id)
-        }
-
-        async fn close(&mut self) -> anyhow::Result<(), lapin::Error> {
+        pub async fn close(&mut self) -> anyhow::Result<()> {
+            assert_eq!(self.is_connected(), true);
             for (channel_no, channel) in self.map_channel_.iter() {
                 log!("try close channel({})", channel_no);
                 channel.close(1, "reply_text").await?;
             }
 
             self.map_channel_.clear();
-            self.conn_.close(1, "reply_text").await
+            self.conn_.close(1, "reply_text").await?;
+            Ok(())
         }
 
-        async fn declare_exchange<TStr: Into<&'static str>>(
+        pub async fn channel(&mut self) -> anyhow::Result<&mut Self> {
+            assert_eq!(self.is_connected(), true);
+            let channel = self.conn_.create_channel().await?;
+            let channel_id = channel.id();
+
+            if let Some(channel_id) = self.map_channel_.insert(channel_id, channel) {
+                bail!("already exist channel({})", channel_id.id());
+            }
+            log!("create_channel({})", channel_id);
+            Ok(self)
+        }
+
+        pub async fn declare_exchange<TStr: Into<&'static str>>(
             &mut self,
-            channel_no: u16,
+            channel_no: ChannelNo,
             exchange_name: TStr,
             kind: ExchangeKind,
-        ) -> anyhow::Result<()> {
+        ) -> anyhow::Result<&mut Self> {
+            assert_eq!(self.is_connected(), true);
+            let exchange_name = exchange_name.into();
             if let Some(channel) = self._get_channel(channel_no) {
                 channel
                     .exchange_declare(
@@ -70,13 +80,13 @@ pub mod amqp {
                         FieldTable::default(),
                     )
                     .await?;
-                return Ok(());
+                log!("declare_exchange({}:{})", channel_no, exchange_name);
+                return Ok(self);
             }
-
             bail!("not exist channel({})", channel_no);
         }
 
-        async fn publish<TStr: Into<&'static str>, TBody: Into<String>>(
+        pub async fn publish<TStr: Into<&'static str>, TBody: Into<String>>(
             &self,
             channel_no: u16,
             exchange_name: TStr,
@@ -98,100 +108,57 @@ pub mod amqp {
             bail!("failed to publish!!!!!!");
         }
 
+        async fn _reconnect(&mut self) -> anyhow::Result<&mut Self> {
+            self.close().await?;
+            self.conn_ = _connect(&self.conf_).await?;
+            Ok(self)
+        }
+
         fn _get_channel(&self, channel_no: u16) -> Option<&Channel> {
             self.map_channel_.get(&channel_no)
         }
     }
 
-    pub struct MQContext {
-        conf_: Config,
-        inner_context_: Option<InnerContext>,
+    async fn _connect(mq_conf: &Config) -> anyhow::Result<Connection, lapin::Error> {
+        Connection::connect(&_into_uri(mq_conf)[..], _into_connect_properties(mq_conf)).await
     }
 
-    impl Default for MQContext {
-        fn default() -> Self {
-            Self {
-                conf_: config_format::MQConf::default(),
-                inner_context_: None,
-            }
-        }
+    pub struct MQRunnerBase {
+        context_: Option<MQContext>,
+        //fn_init_: async fn(),
     }
 
-    impl MQContext {
-        pub fn new(mq_conf: &config_format::MQConf) -> anyhow::Result<Self> {
-            Ok(Self {
-                conf_: mq_conf.clone(),
-                inner_context_: None,
-            })
-        }
+    // type FnInit = fn(&MQContext) -> Result<MQContext, lapin::Error>;
 
-        pub fn is_connected(&self) -> bool {
-            match &self.inner_context_ {
-                None => false,
-                Some(context) => context.status().connected(),
-            }
-        }
+    //  impl MQRunnerBase {
+    //      async fn new(mq_conf: &Config, fn_init: FnInit) {
+    //         async move || ->anyhow::Result<()>{
+    //             let a = MQContext::new(&mq_conf).await?;
+    //         }
+    //      }
+    //             Wrapper::new(|mq_conf: &config_format::MQConf| {
+    //                 Box::pin(async {
+    //                     let conf = mq_conf.clone();
+    //                     let a = MQContext::new(&conf).await?;
+    //                     Ok(a)
+    //                 })
+    //             });
+    //         Self { context_: None }
+    //}
+    //         let wrapped_init: Result<MQContext, lapin::Error> =
+    //             async move || -> Result<MQContext, lapin::Error> {
+    //                 let context = MQContext::new(&mq_conf).await?;
+    //                 let a = fn_init(&context)?;
+    //                 Ok(a)
+    //             };
 
-        pub async fn close(&mut self) -> anyhow::Result<()> {
-            assert_eq!(self.is_connected(), true);
-            get_mut_ref_member!(self, inner_context_).close().await?;
-            self.inner_context_ = None;
-            Ok(())
-        }
+    //         Self { context_: None }
+    //     }
 
-        pub async fn connect(&mut self) -> anyhow::Result<&mut Self> {
-            assert_eq!(self.is_connected(), false);
-            let conf = &self.conf_;
-            let inner_context = InnerContext::new(
-                Connection::connect(&_into_uri(conf)[..], _into_connect_properties(conf)).await?,
-            );
+    //     fn _recover(&mut self) {}
+    //}
 
-            self.inner_context_ = Some(inner_context);
-            Ok(self)
-        }
-
-        #[allow(unused)]
-        pub async fn reconnect(&mut self) -> anyhow::Result<&mut Self> {
-            self.connect().await
-        }
-
-        pub async fn channel(&mut self) -> anyhow::Result<&mut Self> {
-            assert_eq!(self.is_connected(), true);
-            let channel_id = get_mut_ref_member!(self, inner_context_).channel().await?;
-            log!("create_channel({})", channel_id);
-            Ok(self)
-        }
-
-        pub async fn declare_exchange<TStr: Into<&'static str>>(
-            &mut self,
-            channel_no: ChannelNo,
-            exchange_name: TStr,
-            kind: ExchangeKind,
-        ) -> anyhow::Result<&mut Self> {
-            assert_eq!(self.is_connected(), true);
-            let exchange_name = exchange_name.into();
-
-            get_mut_ref_member!(self, inner_context_)
-                .declare_exchange(channel_no, exchange_name, kind)
-                .await?;
-            log!("declare_exchange({}:{})", channel_no, exchange_name);
-            Ok(self)
-        }
-
-        pub async fn publish<TStr: Into<&'static str>, TBody: Into<String>>(
-            &self,
-            channel_no: u16,
-            exchange_name: TStr,
-            routing_key: TStr,
-            body: TBody,
-        ) -> anyhow::Result<()> {
-            get_ref_member!(self, inner_context_)
-                .publish(channel_no, exchange_name, routing_key, body)
-                .await
-        }
-    }
-
-    fn _into_uri(mq_conf: &config_format::MQConf) -> String {
+    fn _into_uri(mq_conf: &Config) -> String {
         ("amqp://").to_owned()
             + &mq_conf.user
             + ":"
