@@ -22,6 +22,7 @@ use rabbitmq::amqp::{MQContext, MQRunnerBase};
 #[rocket::main]
 async fn main() -> anyhow::Result<()> {
     app::get_instance().init()?;
+    // app::get_instance().init()?.launch().await?;
 
     let _runner = MQRunnerBase::new(|| {
         async move {

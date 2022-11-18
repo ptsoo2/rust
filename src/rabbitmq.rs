@@ -127,7 +127,9 @@ pub mod amqp {
 
     /////////////////////////////////////////////////////////////////////////////////
     pub struct MQRunnerBase {
+        #[allow(unused)]
         context_: Option<MQContext>,
+        #[allow(unused)]
         fn_recover_: FnRecover,
         // todo! join_handle
     }
@@ -140,6 +142,7 @@ pub mod amqp {
             })
         }
 
+        #[allow(unused)]
         pub async fn start() {}
 
         async fn _recover(&mut self) -> anyhow::Result<()> {

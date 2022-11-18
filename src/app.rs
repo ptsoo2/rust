@@ -37,6 +37,7 @@ impl App {
         self._boot_third_party()
     }
 
+    #[allow(unused)]
     pub async fn launch(&'static self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
         let server_config_list = &self.get_config().server_group.data;
         let launch_hint_list =
