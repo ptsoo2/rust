@@ -27,7 +27,7 @@ pub(crate) fn boot_redis(config: &config::Config) -> anyhow::Result<MapRedisPool
             None,
         )?;
 
-        if let Some(_) = map_redis_pool.insert(conf.db_no, pool) {
+        if map_redis_pool.insert(conf.db_no, pool).is_some() {
             bail!("alreay exist db_no({})", conf.db_no);
         }
     }

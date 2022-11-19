@@ -43,9 +43,11 @@ pub fn make_launch_hint(
     }
 }
 
+type ListFnMount = [fn(Rocket<Build>) -> Rocket<Build>];
+
 pub fn make_launch_hint_list(
     server_config_list: &Vec<ServerConfig>,
-    fn_mount_list: &[fn(Rocket<Build>) -> Rocket<Build>],
+    fn_mount_list: &ListFnMount,
 ) -> anyhow::Result<Vec<LaunchHint>> {
     let config_size = server_config_list.len();
     let mount_size = fn_mount_list.len();

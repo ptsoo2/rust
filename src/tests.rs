@@ -23,9 +23,7 @@ use std::thread::{self};
 use crate::app;
 
 pub fn _test_closure_and_lambda() {
-    let mut vec: Vec<i32> = Vec::new();
-    vec.push(1);
-    vec.push(1);
+    let vec: Vec<i32> = vec![1, 1];
 
     log!("{:?}", vec.as_ptr());
 
