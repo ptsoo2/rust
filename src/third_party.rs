@@ -4,7 +4,10 @@ use anyhow::bail;
 use ex_config::config;
 use ex_database::redis_entry::{self, Stub};
 
-use ex_rabbitmq::{context::MQContext, runner::MQRunnerBase};
+use ex_rabbitmq::{
+    context::MQContext,
+    runner::{MQRunnerBase, Publisher},
+};
 use futures::FutureExt;
 use lapin::ExchangeKind;
 use r2d2::Pool;
@@ -33,9 +36,8 @@ pub(crate) fn boot_redis(config: &config::Config) -> anyhow::Result<MapRedisPool
 }
 
 #[allow(unused)]
-pub(crate) fn boot_mq(config: &config::Config) -> MQRunnerBase {
-    
-    MQRunnerBase::new(|| {
+pub(crate) fn boot_mq(config: &config::Config) -> Publisher {
+    Publisher::new(|| {
         async move {
             let mq_conf = &app::get_instance().get_config().mq_conf;
             let mut context = MQContext::new(mq_conf).await?;

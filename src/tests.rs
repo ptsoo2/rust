@@ -11,9 +11,10 @@ use ex_common::log;
 use ex_database::redis_entry;
 use ex_database::redis_value::RedisValue;
 use ex_rabbitmq::context::MQContext;
+use ex_util::thread_job_queue::ThreadJobQueue;
 use lapin::ExchangeKind;
 use redis::{Cmd, ConnectionLike, Pipeline, Value};
-use std::thread;
+use std::thread::{self};
 
 use crate::app;
 
@@ -249,4 +250,106 @@ fn singleton_test() -> anyhow::Result<()> {
         Ok(())
     });
     join_handle.join().unwrap()
+}
+
+#[allow(unused)]
+fn pointer_test() {
+    let mut a = 0;
+    let mut b = 0;
+
+    unsafe {
+        let mut pa: *mut i32 = &mut a;
+        let mut pb: *mut i32 = &mut b;
+
+        println!("{}({:?})", *pa, pa);
+        println!("{}({:?})", *pb, pb);
+
+        *pa = 123;
+        *pb = 456;
+
+        println!("{}({:?})", *pa, pa);
+        println!("{}({:?})", *pb, pb);
+
+        let temp_pa = pa;
+        pa = pb;
+        pb = temp_pa;
+
+        println!("{}({:?})", *pa, pa);
+        println!("{}({:?})", *pb, pb);
+    }
+}
+
+#[allow(unused)]
+fn test_thread_job_queue_st() {
+    let mut thread_job_queue = ThreadJobQueue::<i32>::default();
+
+    // publish
+    {
+        let mut a = 0;
+        a += 1;
+        thread_job_queue.push(a);
+        a += 1;
+        thread_job_queue.push(a);
+        a += 1;
+        thread_job_queue.push(a);
+        a += 1;
+        thread_job_queue.push(a);
+        a += 1;
+        thread_job_queue.push(a);
+        a += 1;
+        thread_job_queue.push(a);
+    }
+
+    // consume
+    {
+        thread_job_queue.consume_all(|element| {
+            println!("{}", element);
+        });
+    }
+}
+
+#[allow(unused)]
+pub(crate) fn test_thread_job_queue_mt() {
+    let mut thread_job_queue: ThreadJobQueue<i32> = ThreadJobQueue::default();
+
+    unsafe {
+        let mut fn_get_clone = move || -> *mut ThreadJobQueue<i32> { &mut thread_job_queue };
+        let clone_queue = fn_get_clone();
+
+        // publish
+        let join_handle = thread::spawn(move || -> () {
+            let clone_queue = fn_get_clone();
+            for line in std::io::stdin().lines() {
+                let a = line.unwrap().parse::<i32>();
+                if a.is_err() == true {
+                    println!("exit publisher");
+                    (*clone_queue).push(-1);
+                    break;
+                }
+                let a = a.unwrap();
+                (*clone_queue).push(a);
+                println!("push({})", a);
+            }
+        });
+
+        // consume
+        {
+            loop {
+                let mut is_exit = false;
+                (*clone_queue).consume_all(|elem| {
+                    println!("pop({})", elem);
+                    if elem == -1 {
+                        is_exit = true;
+                    }
+                });
+
+                if is_exit == true {
+                    println!("exit subscriber");
+                    break;
+                }
+            }
+        }
+
+        join_handle.join().unwrap();
+    }
 }

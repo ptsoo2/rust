@@ -9,8 +9,6 @@ pub struct CommandLine {
     pub config_file_path_: String,
 }
 
-
-
 impl CommandLine {
     pub fn load(mut self) -> anyhow::Result<CommandLine> {
         self.args_ = args().collect();

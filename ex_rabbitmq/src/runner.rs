@@ -6,7 +6,7 @@ use anyhow::Ok;
 type ContextBoxFuture = Pin<Box<dyn Future<Output = anyhow::Result<MQContext>> + Send>>;
 type FnRecover = fn() -> ContextBoxFuture;
 
-pub struct MQRunnerBase {
+pub struct RunnerContext {
     #[allow(unused)]
     context_: Option<MQContext>,
     #[allow(unused)]
@@ -14,14 +14,24 @@ pub struct MQRunnerBase {
     // todo! join_handle
 }
 
-impl MQRunnerBase {
-    pub fn new(fn_recover: FnRecover) -> Self {
+pub trait MQRunnerBase {
+    fn new(fn_recover: FnRecover) -> Self;
+}
+
+pub struct Publisher {
+    #[allow(unused)]
+    context_ :RunnerContext
+}
+
+impl MQRunnerBase for Publisher{
+    fn new(fn_recover: FnRecover) ->Self {
         Self {
-            context_: None,
-            fn_recover_: fn_recover,
+            context_: RunnerContext { context_: None, fn_recover_: fn_recover }
         }
     }
+}
 
+impl RunnerContext {
     #[allow(unused)]
     pub async fn start() {}
 

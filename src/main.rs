@@ -1,6 +1,5 @@
 #![feature(decl_macro)]
 #![feature(type_ascription)]
-#![feature(async_closure)]
 
 #[macro_use]
 extern crate rocket;
