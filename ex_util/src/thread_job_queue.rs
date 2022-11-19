@@ -36,9 +36,10 @@ impl<T> ThreadJobQueue<T> {
 
     pub fn swap(&mut self) {
         if let Ok(_) = self.lock_.lock() {
-            let temp_write_queue = self.write_queue_;
-            self.write_queue_ = self.read_queue_;
-            self.read_queue_ = temp_write_queue;
+            std::mem::swap(&mut self.write_queue_, &mut self.read_queue_);
+            // let temp_write_queue = self.write_queue_;
+            // self.write_queue_ = self.read_queue_;
+            // self.read_queue_ = temp_write_queue;
         }
     }
 

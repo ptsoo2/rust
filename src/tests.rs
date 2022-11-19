@@ -4,15 +4,19 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering::{Acquire, Release};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use chrono::DateTime;
 use ex_common::bench::bench_multiple;
 use ex_common::log;
 
 use ex_database::redis_entry;
 use ex_database::redis_value::RedisValue;
 use ex_rabbitmq::context::MQContext;
+use ex_util::stop_handle::StopHandle;
 use ex_util::thread_job_queue::ThreadJobQueue;
 use lapin::ExchangeKind;
+use libc::{c_uint, rand, srand};
 use redis::{Cmd, ConnectionLike, Pipeline, Value};
 use std::thread::{self};
 
@@ -270,9 +274,7 @@ fn pointer_test() {
         println!("{}({:?})", *pa, pa);
         println!("{}({:?})", *pb, pb);
 
-        let temp_pa = pa;
-        pa = pb;
-        pb = temp_pa;
+        std::mem::swap(&mut pa, &mut pb);
 
         println!("{}({:?})", *pa, pa);
         println!("{}({:?})", *pb, pb);
@@ -309,47 +311,111 @@ fn test_thread_job_queue_st() {
 }
 
 #[allow(unused)]
-pub(crate) fn test_thread_job_queue_mt() {
-    let mut thread_job_queue: ThreadJobQueue<i32> = ThreadJobQueue::default();
+pub(crate) fn test_stop_handle(thread_count: usize, with_sec: u64) {
+    let mut stop_handle = StopHandle::new();
+    let mut vec_handle = Vec::with_capacity(thread_count);
+    for idx in 0..thread_count {
+        let stop_token = stop_handle.get_token();
+        let handle = thread::spawn(move || {
+            println!("[{}] thread spawn...", idx);
+            while stop_token.is_stop() == false {
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            println!("[{}] thread exit...", idx);
+        });
+        vec_handle.push(handle);
+    }
+
+    std::thread::sleep(Duration::from_secs(with_sec));
+    stop_handle.stop();
+    for handle in vec_handle.into_iter() {
+        handle.join().unwrap();
+    }
+    println!("all thread exit...");
+}
+
+pub struct ThreadJobQueueWrapper<T> {
+    queue_: *mut ThreadJobQueue<T>,
+}
+
+unsafe impl<T> Send for ThreadJobQueueWrapper<T> {}
+
+#[allow(unused)]
+pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
+    let mut thread_job_queue: ThreadJobQueue<String> = ThreadJobQueue::default();
+
+    let mut vec_handle = Vec::with_capacity(publish_thread_count);
+
+    // publisher
+    for idx in 0..publish_thread_count {
+        let wrapper = ThreadJobQueueWrapper {
+            queue_: &mut thread_job_queue,
+        };
+
+        unsafe {
+            let thread_process = move || {
+                println!("[{}]spawn publisher", idx);
+                let wrapper = wrapper;
+                let queue = wrapper.queue_.as_mut().unwrap();
+
+                {
+                    let a = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("!!")
+                        .as_millis();
+                    srand(a as c_uint);
+                }
+
+                loop {
+                    // random exit
+                    let wait_seconds = (rand() % 5) as u64;
+                    if wait_seconds == 4 {
+                        println!("[{}]exit publisher", idx);
+                        queue.push("-1".to_owned());
+                        break;
+                    }
+
+                    let system_time: DateTime<chrono::Utc> = SystemTime::now().into();
+                    let value = system_time.format("%Y/%m/%dT%T").to_string();
+                    queue.push(value.clone());
+                    println!("[{}]publish({})", idx, value);
+                    thread::sleep(Duration::from_secs(wait_seconds));
+                }
+            };
+
+            vec_handle.push(thread::spawn(thread_process));
+        }
+    }
+
+    // consumer
+    let wrapper = ThreadJobQueueWrapper {
+        queue_: &mut thread_job_queue,
+    };
 
     unsafe {
-        let mut fn_get_clone = move || -> *mut ThreadJobQueue<i32> { &mut thread_job_queue };
-        let clone_queue = fn_get_clone();
+        let thread_process = move || {
+            let wrapper = wrapper;
+            let queue = wrapper.queue_.as_mut().unwrap();
 
-        // publish
-        let join_handle = thread::spawn(move || -> () {
-            let clone_queue = fn_get_clone();
-            for line in std::io::stdin().lines() {
-                let a = line.unwrap().parse::<i32>();
-                if a.is_err() == true {
-                    println!("exit publisher");
-                    (*clone_queue).push(-1);
-                    break;
-                }
-                let a = a.unwrap();
-                (*clone_queue).push(a);
-                println!("push({})", a);
-            }
-        });
-
-        // consume
-        {
-            loop {
-                let mut is_exit = false;
-                (*clone_queue).consume_all(|elem| {
-                    println!("pop({})", elem);
-                    if elem == -1 {
-                        is_exit = true;
+            let mut exit_count = 0;
+            let mut is_stop = false;
+            while is_stop == false {
+                queue.consume_all(|elem| {
+                    if elem.eq(&"-1".to_owned()) {
+                        exit_count += 1;
+                        if exit_count == publish_thread_count {
+                            is_stop = true;
+                        }
                     }
+                    println!("consume({})", elem);
                 });
-
-                if is_exit == true {
-                    println!("exit subscriber");
-                    break;
-                }
             }
-        }
-
-        join_handle.join().unwrap();
+        };
+        vec_handle.push(thread::spawn(thread_process));
     }
+
+    for handle in vec_handle.into_iter() {
+        handle.join().unwrap();
+    }
+    println!("all thread exit...");
 }
