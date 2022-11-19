@@ -10,12 +10,12 @@ use ex_common::log;
 
 use ex_database::redis_entry;
 use ex_database::redis_value::RedisValue;
+use ex_rabbitmq::context::MQContext;
 use lapin::ExchangeKind;
 use redis::{Cmd, ConnectionLike, Pipeline, Value};
 use std::thread;
 
 use crate::app;
-use crate::rabbitmq::amqp::MQContext;
 
 pub fn _test_closure_and_lambda() {
     let mut vec: Vec<i32> = Vec::new();

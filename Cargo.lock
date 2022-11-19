@@ -687,6 +687,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ex_rabbitmq"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ex_common",
+ "ex_config",
+ "lapin",
+]
+
+[[package]]
 name = "ex_util"
 version = "0.1.0"
 dependencies = [
@@ -968,6 +978,7 @@ dependencies = [
  "ex_config",
  "ex_database",
  "ex_net",
+ "ex_rabbitmq",
  "ex_util",
  "function_name",
  "futures",
