@@ -62,7 +62,7 @@ pub fn make_launch_hint_list(
     for idx in 0..config_size {
         let hint = make_launch_hint(
             server_config_list.get(idx).unwrap().clone(),
-            fn_mount_list.get(idx).unwrap().clone(),
+            *fn_mount_list.get(idx).unwrap(),
         );
 
         ret.push(hint);
@@ -74,7 +74,7 @@ pub async fn launch_all(launch_hint_list: Vec<LaunchHint>) -> anyhow::Result<Vec
     let mut handle_list = Vec::with_capacity(launch_hint_list.len());
 
     for hint in &launch_hint_list {
-        let rocket = _make_rocket(&hint).await?;
+        let rocket = _make_rocket(hint).await?;
         let join_handle = tokio::spawn(async move { rocket.launch().await });
 
         handle_list.push(join_handle);

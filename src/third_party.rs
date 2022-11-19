@@ -34,7 +34,8 @@ pub(crate) fn boot_redis(config: &config::Config) -> anyhow::Result<MapRedisPool
 
 #[allow(unused)]
 pub(crate) fn boot_mq(config: &config::Config) -> MQRunnerBase {
-    let runner = MQRunnerBase::new(|| {
+    
+    MQRunnerBase::new(|| {
         async move {
             let mq_conf = &app::get_instance().get_config().mq_conf;
             let mut context = MQContext::new(mq_conf).await?;
@@ -46,8 +47,7 @@ pub(crate) fn boot_mq(config: &config::Config) -> MQRunnerBase {
             Ok(context)
         }
         .boxed()
-    });
-    runner
+    })
 }
 
 fn _connect_test() {}

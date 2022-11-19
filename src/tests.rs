@@ -105,7 +105,7 @@ pub fn _test_acceptor() {
     .expect("Error setting Ctrl-C handler");
 
     let listener = TcpListener::bind("localhost:7878").unwrap();
-    while listener.set_nonblocking(true).is_ok() == false {}
+    while listener.set_nonblocking(true).is_err() {}
 
     log!("Waiting for Ctrl-C...");
     for stream in listener.incoming() {
@@ -119,7 +119,7 @@ pub fn _test_acceptor() {
             }
         }
 
-        if stop_handle.load(Acquire) == true {
+        if stop_handle.load(Acquire) {
             log!("stop!!");
             break;
         }
