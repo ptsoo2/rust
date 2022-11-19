@@ -318,7 +318,7 @@ pub(crate) fn test_stop_handle(thread_count: usize, with_sec: u64) {
         let stop_token = stop_handle.get_token();
         let handle = thread::spawn(move || {
             println!("[{}] thread spawn...", idx);
-            while stop_token.is_stop() == false {
+            while !stop_token.is_stop() {
                 std::thread::sleep(Duration::from_millis(1));
             }
             println!("[{}] thread exit...", idx);
@@ -399,7 +399,7 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
 
             let mut exit_count = 0;
             let mut is_stop = false;
-            while is_stop == false {
+            while !is_stop {
                 queue.consume_all(|elem| {
                     if elem.eq(&"-1".to_owned()) {
                         exit_count += 1;
