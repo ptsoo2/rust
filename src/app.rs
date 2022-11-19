@@ -1,9 +1,9 @@
 use crate::{
     command_line::CommandLine,
-    database::{boot_redis, MapRedisPool, RedisPool},
     server::mount_port1,
     server::mount_port2,
     server_common,
+    third_party::{boot_redis, MapRedisPool, RedisPool},
 };
 use ex_common::get_ref_member;
 use ex_config::config::{Config, EConfigLoadType};
@@ -33,7 +33,7 @@ impl App {
             EConfigLoadType::YAML,
         )?);
 
-        // database
+        // third party
         self._boot_third_party()
     }
 
