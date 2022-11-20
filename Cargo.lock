@@ -652,6 +652,7 @@ name = "ex_common"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "libc",
 ]
 
 [[package]]
@@ -702,6 +703,7 @@ version = "0.1.0"
 dependencies = [
  "ctrlc",
  "ex_common",
+ "spin 0.9.4",
 ]
 
 [[package]]

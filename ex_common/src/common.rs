@@ -3,6 +3,7 @@ pub use crate::{function, log};
 pub extern crate chrono;
 
 pub use chrono::Local;
+use libc::system;
 
 use std::{env, io};
 
@@ -16,6 +17,15 @@ pub fn get_current_path_str() -> String {
 
 pub fn print_type_of_name<T>(_: &T) {
     log!("{}", std::any::type_name::<T>());
+}
+
+pub fn system_pause() {
+    let cmd: [i8; 6] = [
+        'p' as i8, 'a' as i8, 'u' as i8, 's' as i8, 'e' as i8, '\0' as i8,
+    ];
+    unsafe {
+        system(cmd.as_ptr());
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

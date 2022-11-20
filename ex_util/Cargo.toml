@@ -9,3 +9,4 @@ edition = "2021"
 ex_common = { path = "../ex_common" }
 
 ctrlc = "3.2.3"
+spin="0.9.4"

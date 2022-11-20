@@ -1,6 +1,7 @@
 use ex_common::log;
 use std::sync::mpsc::{channel, Receiver};
 
+pub mod shaerd_raw_ptr;
 pub mod stop_handle;
 pub mod thread_job_queue;
 

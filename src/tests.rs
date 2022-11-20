@@ -1,3 +1,4 @@
+use chrono::DateTime;
 #[allow(unused_imports)]
 use std::io::ErrorKind::WouldBlock;
 use std::net::{TcpListener, TcpStream};
@@ -6,15 +7,18 @@ use std::sync::atomic::Ordering::{Acquire, Release};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use chrono::DateTime;
 use ex_common::bench::bench_multiple;
 use ex_common::log;
 
 use ex_database::redis_entry;
 use ex_database::redis_value::RedisValue;
+
 use ex_rabbitmq::context::MQContext;
+
+use ex_util::shaerd_raw_ptr::TSharedMutPtr;
 use ex_util::stop_handle::StopHandle;
 use ex_util::thread_job_queue::ThreadJobQueue;
+
 use lapin::ExchangeKind;
 use libc::{c_uint, rand, srand};
 use redis::{Cmd, ConnectionLike, Pipeline, Value};
@@ -332,12 +336,6 @@ pub(crate) fn test_stop_handle(thread_count: usize, with_sec: u64) {
     println!("all thread exit...");
 }
 
-pub struct ThreadJobQueueWrapper<T> {
-    queue_: *mut ThreadJobQueue<T>,
-}
-
-unsafe impl<T> Send for ThreadJobQueueWrapper<T> {}
-
 #[allow(unused)]
 pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
     let mut thread_job_queue: ThreadJobQueue<String> = ThreadJobQueue::default();
@@ -346,15 +344,13 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
 
     // publisher
     for idx in 0..publish_thread_count {
-        let wrapper = ThreadJobQueueWrapper {
-            queue_: &mut thread_job_queue,
-        };
+        let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
 
         unsafe {
             let thread_process = move || {
                 println!("[{}]spawn publisher", idx);
                 let wrapper = wrapper;
-                let queue = wrapper.queue_.as_mut().unwrap();
+                let queue = wrapper.value_.as_mut().unwrap();
 
                 {
                     let a = SystemTime::now()
@@ -386,14 +382,12 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
     }
 
     // consumer
-    let wrapper = ThreadJobQueueWrapper {
-        queue_: &mut thread_job_queue,
-    };
+    let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
 
     unsafe {
         let thread_process = move || {
             let wrapper = wrapper;
-            let queue = wrapper.queue_.as_mut().unwrap();
+            let queue = wrapper.value_.as_mut().unwrap();
 
             let mut exit_count = 0;
             let mut is_stop = false;
@@ -417,3 +411,50 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
     }
     println!("all thread exit...");
 }
+
+/*
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 105.6633ms}
+{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 61.3735ms}
+{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 66.5905ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 92.4795ms}
+{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.5528ms}
+{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 70.5199ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 101.8052ms}
+{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 52.3547ms}
+{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 71.131ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 93.3407ms}
+{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.831ms}
+{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 65.6029ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 104.3964ms}
+{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 57.9899ms}
+{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 68.8778ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 102.1488ms}
+{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.6644ms}
+{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 64.9164ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 106.3767ms}
+{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 58.2848ms}
+{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 61.1621ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 94.9568ms}
+{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.2586ms}
+{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 70.9907ms}
+
+C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
+{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 93.7214ms}
+{"dt":"2022-11-20T15:20:21", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 49.5277ms}
+{"dt":"2022-11-20T15:20:21", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 69.9408ms}
+*/
