@@ -8,6 +8,9 @@ edition = "2021"
 [dependencies]
 ex_common = { path = "../ex_common" }
 ex_config = { path = "../ex_config" }
+ex_util = { path = "../ex_util" }
 
 anyhow = "1.0"
 lapin = "2.1.1"
+tokio = "1.21.2"
+futures = "0.3"

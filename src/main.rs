@@ -2,6 +2,10 @@
 #![feature(type_ascription)]
 #![feature(associated_type_defaults)]
 
+use std::{thread, time::Duration};
+
+use ex_common::{common::get_tid, log};
+
 #[macro_use]
 extern crate rocket;
 extern crate core;
@@ -15,12 +19,25 @@ mod third_party;
 
 // test-boundary
 // fn main() {
-//     tests::test_thread_job_queue_performance(30, 500, 10);
+//     // tests::test_thread_job_queue_performance(30, 500, 10);
 // }
 
 #[rocket::main]
 async fn main() -> anyhow::Result<()> {
-    app::get_instance().init()?.launch().await?;
+    log!("{:?}", get_tid());
+
+    app::get_instance().init()?;
+
+    let jh = thread::spawn(move || {
+        thread::sleep(Duration::from_secs(5));
+        let a = app::get_instance().get_mq_publisher();
+        loop {
+            a.publish("123123132132123".to_string());
+        }
+    });
+
+    app::get_instance().launch().await?;
+    jh.join().expect("!!!");
 
     Ok(())
 }

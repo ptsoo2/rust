@@ -3,22 +3,25 @@ use crate::{
     server::mount_port1,
     server::mount_port2,
     server_common,
-    third_party::{boot_redis, MapRedisPool, RedisPool},
+    third_party::{boot_mq, boot_redis, MapRedisPool, RedisPool},
 };
-use ex_common::get_ref_member;
+use ex_common::{get_mut_ref_member, get_ref_member};
 use ex_config::config::{Config, EConfigLoadType};
+use ex_rabbitmq::runner::Publisher;
 use rocket::{Ignite, Rocket};
 
 pub struct App {
     command_line_: Option<CommandLine>,
     config_: Option<Config>,
     map_redis_pool_: Option<MapRedisPool>,
+    mq_publisher_: Option<Publisher>,
 }
 
 pub static mut INSTANCE: App = App {
     command_line_: None,
     config_: None,
     map_redis_pool_: None,
+    mq_publisher_: None,
 };
 
 impl App {
@@ -32,14 +35,16 @@ impl App {
             config_file_path.clone(),
             EConfigLoadType::YAML,
         )?);
-
-        // third party
-        self._boot_third_party()
+        Ok(self)
     }
 
     #[allow(unused)]
-    pub async fn launch(&'static self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
-        let server_config_list = &self.get_config().server_group.data;
+    pub async fn launch(&'static mut self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
+        self._boot_third_party().await?._launch().await
+    }
+
+    pub async fn _launch(&'static mut self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
+        let server_config_list = &mut get_mut_ref_member!(self, config_).server_group.data;
         let launch_hint_list =
             server_common::make_launch_hint_list(server_config_list, &[mount_port1, mount_port2])?;
 
@@ -55,14 +60,20 @@ impl App {
         map.get(&db_no)
     }
 
+    pub fn get_mq_publisher(&'static mut self) -> &mut Publisher {
+        get_mut_ref_member!(self, mq_publisher_)
+    }
+
     #[allow(unused)]
     pub fn get_command_line(&'static self) -> &CommandLine {
         get_ref_member!(self, command_line_)
     }
 
-    fn _boot_third_party(&'static mut self) -> anyhow::Result<&'static mut App> {
+    async fn _boot_third_party(&'static mut self) -> anyhow::Result<&'static mut App> {
         // redis
-        self.map_redis_pool_ = Some(boot_redis(get_ref_member!(self, config_))?);
+        self.map_redis_pool_ = Some(boot_redis(get_mut_ref_member!(self, config_))?);
+        self.mq_publisher_ = Some(boot_mq(&get_mut_ref_member!(self, config_).mq_conf));
+        get_mut_ref_member!(self, mq_publisher_).start().await?;
         Ok(self)
     }
 }

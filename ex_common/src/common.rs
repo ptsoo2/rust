@@ -5,7 +5,10 @@ pub extern crate chrono;
 pub use chrono::Local;
 use libc::system;
 
-use std::{env, io};
+use std::{
+    env, io,
+    thread::{self, ThreadId},
+};
 
 pub fn get_current_path() -> io::Result<std::path::PathBuf> {
     env::current_dir()
@@ -26,6 +29,10 @@ pub fn system_pause() {
     unsafe {
         system(cmd.as_ptr());
     }
+}
+
+pub fn get_tid() -> ThreadId {
+    thread::current().id()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

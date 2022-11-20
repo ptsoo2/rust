@@ -694,7 +694,10 @@ dependencies = [
  "anyhow",
  "ex_common",
  "ex_config",
+ "ex_util",
+ "futures",
  "lapin",
+ "tokio",
 ]
 
 [[package]]

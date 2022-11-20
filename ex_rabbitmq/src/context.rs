@@ -100,6 +100,7 @@ impl MQContext {
                     AMQPProperties::default(),
                 )
                 .await?;
+            return Ok(());
         };
         bail!("failed to publish!!!!!!");
     }
