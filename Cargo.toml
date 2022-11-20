@@ -27,6 +27,7 @@ libc = "0.2.137"
 redis = "0.22.1"
 r2d2 = "0.8.10"
 lapin = "2.1.1"
+spin = "0.9.4"
 
 
 [dev-dependencies]

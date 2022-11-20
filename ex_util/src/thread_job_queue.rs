@@ -1,24 +1,32 @@
 use std::{collections::VecDeque, ptr::null_mut};
 
-use spin::mutex::SpinMutex;
+use crate::general_lock::{ILockable, MutexDefault, NullMutex, SpinMutexDefault};
 
-pub struct ThreadJobQueue<T> {
-    write_queue_: *mut VecDeque<T>,
-    read_queue_: *mut VecDeque<T>,
-    lst_queue_: [VecDeque<T>; 2],
-    lock_: SpinMutex<i32>,
+pub struct ThreadJobQueueBase<TElem, TLock>
+where
+    TLock: ILockable,
+{
+    write_queue_: *mut VecDeque<TElem>,
+    read_queue_: *mut VecDeque<TElem>,
+    lst_queue_: [VecDeque<TElem>; 2],
+
+    #[allow(unused)]
+    lock_: TLock,
 }
 
-unsafe impl<T> Send for ThreadJobQueue<T> {}
-unsafe impl<T> Sync for ThreadJobQueue<T> {}
+unsafe impl<TElem, TLock> Send for ThreadJobQueueBase<TElem, TLock> where TLock: ILockable {}
+unsafe impl<TElem, TLock> Sync for ThreadJobQueueBase<TElem, TLock> where TLock: ILockable {}
 
-impl<T> Default for ThreadJobQueue<T> {
+impl<TElem, TLock> Default for ThreadJobQueueBase<TElem, TLock>
+where
+    TLock: ILockable,
+{
     fn default() -> Self {
         let mut ret_self = Self {
             write_queue_: null_mut(),
             read_queue_: null_mut(),
             lst_queue_: [VecDeque::new(), VecDeque::new()],
-            lock_: SpinMutex::new(0),
+            lock_: ILockable::new(),
         };
 
         ret_self.write_queue_ = &mut ret_self.lst_queue_[0];
@@ -27,24 +35,28 @@ impl<T> Default for ThreadJobQueue<T> {
     }
 }
 
-impl<T> ThreadJobQueue<T> {
-    pub fn push(&mut self, val: T) {
-        let a = self.lock_.lock();
+impl<TElem, TLock> ThreadJobQueueBase<TElem, TLock>
+where
+    TLock: ILockable + 'static,
+{
+    pub fn push(&mut self, val: TElem) {
         unsafe {
-            (*self.write_queue_).push_back(val);
+            let closure = || {
+                (*self.write_queue_).push_back(val);
+            };
+            self.lock_.critical_process(closure);
         }
-        drop(a);
     }
 
     pub fn swap(&mut self) {
-        let a = self.lock_.lock();
-        std::mem::swap(&mut self.write_queue_, &mut self.read_queue_);
-        drop(a);
+        self.lock_.critical_process(|| {
+            std::mem::swap(&mut self.write_queue_, &mut self.read_queue_);
+        });
     }
 
     pub fn consume_all<F>(&mut self, mut iter: F)
     where
-        F: FnMut(T) -> (),
+        F: FnMut(TElem) -> (),
     {
         self.swap();
         unsafe {
@@ -71,7 +83,13 @@ impl<T> ThreadJobQueue<T> {
         }
     }
 
-    pub fn get_read_queue(&mut self) -> *mut VecDeque<T> {
+    #[allow(unused)]
+    pub fn get_read_queue(&mut self) -> *mut VecDeque<TElem> {
         self.read_queue_
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////////////
+pub type ThreadJobQueueNull<TElem> = ThreadJobQueueBase<TElem, NullMutex>;
+pub type ThreadJobQueueMutex<TElem> = ThreadJobQueueBase<TElem, MutexDefault>;
+pub type ThreadJobQueueSpin<TElem> = ThreadJobQueueBase<TElem, SpinMutexDefault>;

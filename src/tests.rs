@@ -1,4 +1,5 @@
 use chrono::DateTime;
+use ex_util::general_lock::{ILockable, MutexDefault, SpinMutexDefault};
 #[allow(unused_imports)]
 use std::io::ErrorKind::WouldBlock;
 use std::net::{TcpListener, TcpStream};
@@ -17,7 +18,7 @@ use ex_rabbitmq::context::MQContext;
 
 use ex_util::shaerd_raw_ptr::TSharedMutPtr;
 use ex_util::stop_handle::StopHandle;
-use ex_util::thread_job_queue::ThreadJobQueue;
+use ex_util::thread_job_queue::{ThreadJobQueueBase, ThreadJobQueueNull, ThreadJobQueueSpin};
 
 use lapin::ExchangeKind;
 use libc::{c_uint, rand, srand};
@@ -284,8 +285,32 @@ fn pointer_test() {
 }
 
 #[allow(unused)]
+pub(crate) fn test_stop_handle(thread_count: usize, with_sec: u64) {
+    let mut stop_handle = StopHandle::new();
+    let mut vec_handle = Vec::with_capacity(thread_count);
+    for idx in 0..thread_count {
+        let stop_token = stop_handle.get_token();
+        let handle = thread::spawn(move || {
+            println!("[{}] thread spawn...", idx);
+            while !stop_token.is_stop() {
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            println!("[{}] thread exit...", idx);
+        });
+        vec_handle.push(handle);
+    }
+
+    std::thread::sleep(Duration::from_secs(with_sec));
+    stop_handle.stop();
+    for handle in vec_handle.into_iter() {
+        handle.join().unwrap();
+    }
+    println!("all thread exit...");
+}
+
+#[allow(unused)]
 fn test_thread_job_queue_st() {
-    let mut thread_job_queue = ThreadJobQueue::<i32>::default();
+    let mut thread_job_queue = ThreadJobQueueNull::<i32>::default();
 
     // publish
     {
@@ -313,32 +338,8 @@ fn test_thread_job_queue_st() {
 }
 
 #[allow(unused)]
-pub(crate) fn test_stop_handle(thread_count: usize, with_sec: u64) {
-    let mut stop_handle = StopHandle::new();
-    let mut vec_handle = Vec::with_capacity(thread_count);
-    for idx in 0..thread_count {
-        let stop_token = stop_handle.get_token();
-        let handle = thread::spawn(move || {
-            println!("[{}] thread spawn...", idx);
-            while !stop_token.is_stop() {
-                std::thread::sleep(Duration::from_millis(1));
-            }
-            println!("[{}] thread exit...", idx);
-        });
-        vec_handle.push(handle);
-    }
-
-    std::thread::sleep(Duration::from_secs(with_sec));
-    stop_handle.stop();
-    for handle in vec_handle.into_iter() {
-        handle.join().unwrap();
-    }
-    println!("all thread exit...");
-}
-
-#[allow(unused)]
 pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
-    let mut thread_job_queue: ThreadJobQueue<String> = ThreadJobQueue::default();
+    let mut thread_job_queue: ThreadJobQueueSpin<String> = ThreadJobQueueBase::default();
 
     let mut vec_handle = Vec::with_capacity(publish_thread_count);
 
@@ -412,49 +413,77 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
     println!("all thread exit...");
 }
 
-/*
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 105.6633ms}
-{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 61.3735ms}
-{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 66.5905ms}
+#[allow(unused)]
+pub(crate) fn test_thread_job_queue_custom_lock<TLock>(
+    publish_thread_count: usize,
+    mut publish_count: usize,
+) where
+    TLock: ILockable + 'static,
+{
+    let mut thread_job_queue: ThreadJobQueueBase<String, TLock> = ThreadJobQueueBase::default();
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 92.4795ms}
-{"dt":"2022-11-20T15:20:16", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.5528ms}
-{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 70.5199ms}
+    let mut vec_handle = Vec::with_capacity(publish_thread_count);
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 101.8052ms}
-{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 52.3547ms}
-{"dt":"2022-11-20T15:20:17", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 71.131ms}
+    // publisher
+    for idx in 0..publish_thread_count {
+        let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 93.3407ms}
-{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.831ms}
-{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 65.6029ms}
+        unsafe {
+            let thread_process = move || {
+                let wrapper = wrapper;
+                let queue = wrapper.value_.as_mut().unwrap();
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 104.3964ms}
-{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 57.9899ms}
-{"dt":"2022-11-20T15:20:18", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 68.8778ms}
+                while publish_count > 0 {
+                    queue.push("12312312312312123".to_owned());
+                    publish_count -= 1;
+                }
+            };
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 102.1488ms}
-{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.6644ms}
-{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 64.9164ms}
+            vec_handle.push(thread::spawn(thread_process));
+        }
+    }
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 106.3767ms}
-{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 58.2848ms}
-{"dt":"2022-11-20T15:20:19", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 61.1621ms}
+    // consumer
+    let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 94.9568ms}
-{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 51.2586ms}
-{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 70.9907ms}
+    unsafe {
+        let thread_process = move || {
+            let wrapper = wrapper;
+            let queue = wrapper.value_.as_mut().unwrap();
 
-C:\Users\taeso\Desktop\rust\target\release>hi_rust.exe
-{"dt":"2022-11-20T15:20:20", "wh":ex_common::bench::bench_multiple(16), "ct:"[singlelock] count: 10, duration: 93.7214ms}
-{"dt":"2022-11-20T15:20:21", "wh":ex_common::bench::bench_multiple(16), "ct:"[spinlock] count: 10, duration: 49.5277ms}
-{"dt":"2022-11-20T15:20:21", "wh":ex_common::bench::bench_multiple(16), "ct:"[mutex] count: 10, duration: 69.9408ms}
-*/
+            let mut remain_consume_count = publish_thread_count * publish_count;
+            let mut is_stop = false;
+            while remain_consume_count > 0 {
+                queue.consume_all(|elem| {
+                    remain_consume_count -= 1;
+                });
+            }
+        };
+        vec_handle.push(thread::spawn(thread_process));
+    }
+
+    for handle in vec_handle.into_iter() {
+        handle.join().unwrap();
+    }
+}
+
+#[allow(unused)]
+pub(crate) fn test_thread_job_queue_performance(
+    publish_thread_count: usize,
+    publish_count: usize,
+    loop_count: u32,
+) {
+    for _ in 0..10 {
+        bench_multiple("spin_mutex", loop_count, || {
+            test_thread_job_queue_custom_lock::<SpinMutexDefault>(
+                publish_thread_count,
+                publish_count,
+            );
+        });
+    }
+    for _ in 0..10 {
+        bench_multiple("mutex", loop_count, || {
+            test_thread_job_queue_custom_lock::<MutexDefault>(publish_thread_count, publish_count);
+        });
+    }
+}
