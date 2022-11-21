@@ -70,7 +70,6 @@ impl App {
     }
 
     async fn _boot_third_party(&'static mut self) -> anyhow::Result<&'static mut App> {
-        // redis
         self.map_redis_pool_ = Some(boot_redis(get_mut_ref_member!(self, config_))?);
         self.mq_publisher_ = Some(boot_mq(&get_mut_ref_member!(self, config_).mq_conf));
         get_mut_ref_member!(self, mq_publisher_).start().await?;

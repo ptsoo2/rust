@@ -4,8 +4,6 @@
 
 use std::{thread, time::Duration};
 
-use ex_common::{common::get_tid, log};
-
 #[macro_use]
 extern crate rocket;
 extern crate core;
@@ -24,8 +22,6 @@ mod third_party;
 
 #[rocket::main]
 async fn main() -> anyhow::Result<()> {
-    log!("{:?}", get_tid());
-
     app::get_instance().init()?;
 
     let jh = thread::spawn(move || {

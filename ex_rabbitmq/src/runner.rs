@@ -3,17 +3,24 @@ use std::{future::Future, pin::Pin, thread::{ self, }, time::Duration};
 use super::context::MQContext;
 use anyhow::{bail};
 use ex_common::log;
-use ex_util::{stop_handle::{StopHandle}, thread_job_queue::ThreadJobQueueSpin, shared_raw_ptr::TSharedMutPtr};
+use ex_util::{stop_handle::{StopHandle, StopToken}, thread_job_queue::ThreadJobQueueSpin, shared_raw_ptr::TSharedMutPtr};
 use tokio::task::JoinHandle;
 
 type ContextBoxFuture = Pin<Box<dyn Future<Output = anyhow::Result<MQContext>> + Send>>;
 type FnRecover = fn() -> ContextBoxFuture;
+type MessageQueue = ThreadJobQueueSpin<String>;
 
 pub struct Publisher {
     stop_handle_: StopHandle,
     fn_recover_: FnRecover,
     join_handle_: Option<JoinHandle<()>>,
-    message_queue_: ThreadJobQueueSpin<String>, // todo! message
+    message_queue_: MessageQueue, // todo! message
+}
+
+pub struct Inner {
+    stop_token_ :StopToken,
+    fn_recover_: FnRecover, 
+    message_queue_: TSharedMutPtr<MessageQueue>,
 }
 
 impl Publisher {
@@ -34,25 +41,25 @@ impl Publisher {
     pub fn close(&self) {todo!()}
 
     pub async fn start(&mut self) -> anyhow::Result<()> {
-        let fn_recover = self.fn_recover_.clone();
-        let stop_token = self.stop_handle_.get_token();
-        let message_queue = TSharedMutPtr{value_: &mut self.message_queue_};
-        log!("{:?}", thread::current().id());
+        let inner = Inner{
+            stop_token_: self.stop_handle_.get_token(),
+            fn_recover_: self.fn_recover_.clone(),
+            message_queue_: TSharedMutPtr { value_: &mut self.message_queue_ },
+        };
+        
         let thread_process = async move{
             unsafe {
-                log!("{:?}", thread::current().id());
-                let message_queue_wrapper = message_queue;
-                let message_queue = message_queue_wrapper.value_.as_mut().unwrap();
+                let inner = inner;
+                let message_queue = inner.message_queue_.value_.as_mut().expect("!!!");
 
-                let mut local_context: Option<MQContext> = fn_recover().await.ok();
-                while stop_token.is_stop() == false {
+                let mut mq_context: Option<MQContext> = None;
+                while inner.stop_token_.is_stop() == false {
                     // recover
-                    if local_context.is_none() == true {
-                        log!("{:?}", thread::current().id());
-                        match fn_recover().await {
+                    if mq_context.is_none() == true {
+                        match (inner.fn_recover_)().await {
                             Ok(context) => {
                                 log!("success recover");
-                                local_context = Some(context);
+                                mq_context = Some(context);
                             },
                             Err(_) => {
                                 log!("failed recover(wait for {} seconds...)", 10);
@@ -62,21 +69,21 @@ impl Publisher {
 
                         continue;
                     }
-                        
+
                     // process
                     message_queue.swap_conditional();
                     let read_queue = message_queue.get_read_queue();
                     while read_queue.is_empty() == false {
                         let body = read_queue.front().unwrap();
 
-                        if let Some(context) = local_context.as_ref() {
+                        if let Some(context) = mq_context.as_ref() {
                             let publish_result = context.publish(1, "game_server.direct", "12312312123", body).await;
                             match publish_result {
                                 Ok(_)=> {
                                     read_queue.pop_back();
                                 }
                                 Err(_) => {
-                                    local_context = None;
+                                    mq_context = None;
                                     break;
                                 }
                             }
