@@ -1,14 +1,13 @@
 use std::collections::BTreeMap;
 
-use anyhow::bail;
-
-use ex_common::common::log;
-use lapin::options::{BasicPublishOptions, ExchangeDeclareOptions};
-use lapin::protocol::basic::AMQPProperties;
-use lapin::types::FieldTable;
-use lapin::{Channel, Connection, ExchangeKind};
-
 use crate::common::_make_connection;
+use crate::message::Message;
+use ex_common::common::log;
+
+use anyhow::bail;
+use lapin::options::{ ExchangeDeclareOptions};
+use lapin::types::FieldTable;
+use lapin::{Channel, Connection, ExchangeKind, BasicProperties};
 
 type Config = ex_config::config_format::MQConf;
 type ChannelNo = u16;
@@ -82,22 +81,23 @@ impl MQContext {
         bail!("not exist channel({})", channel_no);
     }
 
-    pub async fn publish<TStr: Into<&'static str>, TBody: Into<String>>(
+    pub async fn publish(
         &self,
-        channel_no: u16,
-        exchange_name: TStr,
-        routing_key: TStr,
-        body: TBody,
+        message: Message
     ) -> anyhow::Result<()> {
-        if let Some(channel) = self._get_channel(channel_no) {
-            let body: String = body.into();
+        if let Some(channel) = self._get_channel(message.channel_no_) {            
+            let basic_properties = BasicProperties::default()
+            .with_delivery_mode(1)  // nonpersistent delivery mode
+            .with_app_id(message.app_id_.into());
+
+            let body: String = message.body_.into();
             channel
                 .basic_publish(
-                    exchange_name.into(),
-                    routing_key.into(),
-                    BasicPublishOptions::default(),
+                    &message.exchange_[..],
+                    &message.routing_key_[..],
+                    message.basic_publish_options_,
                     body.as_bytes(),
-                    AMQPProperties::default(),
+                    basic_properties,
                 )
                 .await?;
             return Ok(());

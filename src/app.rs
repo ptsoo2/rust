@@ -7,7 +7,7 @@ use crate::{
 };
 use ex_common::{get_mut_ref_member, get_ref_member};
 use ex_config::config::{Config, EConfigLoadType};
-use ex_rabbitmq::runner::Publisher;
+use ex_rabbitmq::publisher::Publisher;
 use rocket::{Ignite, Rocket};
 
 pub struct App {

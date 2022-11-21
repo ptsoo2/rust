@@ -4,7 +4,7 @@ use anyhow::bail;
 use ex_config::{config, config_format::MQConf};
 use ex_database::redis_entry::{self, Stub};
 
-use ex_rabbitmq::{context::MQContext, runner::Publisher};
+use ex_rabbitmq::{context::MQContext, publisher::Publisher};
 use futures::FutureExt;
 use lapin::ExchangeKind;
 use r2d2::Pool;
