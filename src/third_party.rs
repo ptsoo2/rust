@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use anyhow::bail;
 use ex_config::{config, config_format::MQConf};
-use ex_database::redis_entry::{self, Stub};
 
+use ex_database::ex_redis::redis_entry::{self, Stub};
 use ex_rabbitmq::{context::MQContext, publisher::Publisher};
 use futures::FutureExt;
 use lapin::ExchangeKind;

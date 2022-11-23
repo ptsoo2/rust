@@ -17,13 +17,6 @@ pub struct App {
     mq_publisher_: Option<Publisher>,
 }
 
-pub static mut INSTANCE: App = App {
-    command_line_: None,
-    config_: None,
-    map_redis_pool_: None,
-    mq_publisher_: None,
-};
-
 impl App {
     pub fn init(&'static mut self) -> anyhow::Result<&'static mut App> {
         // parse commandLine
@@ -60,6 +53,7 @@ impl App {
         map.get(&db_no)
     }
 
+    #[allow(unused)]
     pub fn get_mq_publisher(&'static mut self) -> &mut Publisher {
         get_mut_ref_member!(self, mq_publisher_)
     }
@@ -76,6 +70,13 @@ impl App {
         Ok(self)
     }
 }
+
+pub static mut INSTANCE: App = App {
+    command_line_: None,
+    config_: None,
+    map_redis_pool_: None,
+    mq_publisher_: None,
+};
 
 pub fn get_instance() -> &'static mut App {
     unsafe { &mut INSTANCE }

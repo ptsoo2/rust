@@ -28,7 +28,7 @@ pub struct Publisher {
     message_queue_: MessageQueue, // todo! message
 }
 
-pub struct Inner {
+struct Inner {
     stop_token_ :StopToken,
     fn_recover_: FnRecover, 
     message_queue_: TSharedMutPtr<MessageQueue>,

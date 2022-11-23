@@ -7,8 +7,8 @@ use std::sync::Arc;
 use std::thread::{self};
 
 use ex_common::log;
-use ex_database::redis_value::RedisValue;
 
+use ex_database::ex_redis::redis_value::RedisValue;
 use redis::ConnectionLike;
 
 use crate::app;

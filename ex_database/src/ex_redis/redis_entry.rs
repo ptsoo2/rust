@@ -1,9 +1,9 @@
-use crate::builder_entry;
-use crate::builder_entry::Config;
 use ex_config::config_format;
 use r2d2::{Builder, Pool};
 use redis::ConnectionAddr::Tcp;
 use redis::{Cmd, Connection, ConnectionInfo, ConnectionLike, RedisConnectionInfo, RedisError};
+
+use super::builder_entry::{self, Config};
 
 pub struct Stub {
     connection_info_: redis::ConnectionInfo,

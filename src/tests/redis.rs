@@ -1,4 +1,4 @@
-use ex_database::redis_entry;
+use ex_database::ex_redis::redis_entry;
 use redis::{Cmd, ConnectionLike, Pipeline, Value};
 
 #[allow(unused)]
