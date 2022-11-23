@@ -10,9 +10,9 @@ pub(crate) async fn _make_connection(mq_conf: &Config) -> anyhow::Result<Connect
 
 pub(crate) fn _into_uri(mq_conf: &Config) -> String {
     ("amqp://").to_owned()
-        + &mq_conf.user
+        + &mq_conf.auth.user
         + ":"
-        + &mq_conf.password
+        + &mq_conf.auth.password
         + "@"
         + &mq_conf.host.ip
         + ":"

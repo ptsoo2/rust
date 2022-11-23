@@ -13,6 +13,12 @@ pub struct Host {
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
+pub struct Auth {
+    pub user: String,
+    pub password: String,
+}
+
+#[derive(Clone, Default, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Naming {
     pub service_name: String,
 }
@@ -108,8 +114,7 @@ pub struct MQConf {
     pub mem_channel_bound: usize,
     pub buffered_writes_high_water: usize,
     pub buffered_writes_low_water: usize,
-    pub user: String,
-    pub password: String,
+    pub auth: Auth,
     pub host: Host,
     pub publish_exchange: MQPublishExchange,
 }
@@ -120,13 +125,53 @@ impl Default for MQConf {
             mem_channel_bound: 16,
             buffered_writes_high_water: 16 << 20,
             buffered_writes_low_water: 0,
-            user: String::new(),
-            password: String::new(),
+            auth: Auth {
+                user: ("admin").to_owned(),
+                password: ("admin").to_owned(),
+            },
             host: Host {
                 ip: ("127.0.0.1").to_owned(),
                 port: 5672,
             },
             publish_exchange: MQPublishExchange::default(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct MySQLSchemaConf {
+    pub host: Host,
+    pub auth: Auth,
+    pub schema_name: String,
+}
+
+impl Default for MySQLSchemaConf {
+    fn default() -> Self {
+        Self {
+            host: Host {
+                ip: ("127.0.0.1").to_owned(),
+                port: 13306,
+            },
+            auth: Auth {
+                user: ("server_dev").to_owned(),
+                password: ("wkddnjsdud").to_owned(),
+            },
+            schema_name: ("game_db").to_owned(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub struct MySQLConf {
+    pub data: Vec<MySQLSchemaConf>,
+    pub max_connections: u32,
+}
+
+impl Default for MySQLConf {
+    fn default() -> Self {
+        Self {
+            data: vec![MySQLSchemaConf::default()],
+            max_connections: 1 << 5,
         }
     }
 }

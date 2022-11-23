@@ -17,7 +17,7 @@ serde_yaml = "0.9.14"
 anyhow = "1.0"
 enum-iterator = "1.2.0"
 function_name = "0.3.0"
-chrono = "0.4"
+chrono = { version = "0.4.11", features = ["serde"] }
 network-interface = "0.1.4"
 rocket = "0.5.0-rc.2"
 futures = "0.3.25"
@@ -28,6 +28,7 @@ redis = "0.22.1"
 r2d2 = "0.8.10"
 lapin = "2.1.1"
 spin = "0.9.4"
+sqlx = { version = "0.6.2", features = [ "runtime-tokio-rustls", "mysql", "chrono" ] }
 
 
 [dev-dependencies]

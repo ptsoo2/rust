@@ -12,6 +12,7 @@ pub struct Config {
     pub server_group: config_format::ServerGroup,
     pub redis_conf: config_format::RedisGroup,
     pub mq_conf: config_format::MQConf,
+    pub mysql_conf: config_format::MySQLConf,
 }
 
 impl Default for Config {
@@ -20,6 +21,7 @@ impl Default for Config {
             server_group: config_format::ServerGroup::default(),
             redis_conf: config_format::RedisGroup::default(),
             mq_conf: config_format::MQConf::default(),
+            mysql_conf: config_format::MySQLConf::default(),
         }
     }
 }

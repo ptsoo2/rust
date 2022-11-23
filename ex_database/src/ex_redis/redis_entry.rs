@@ -3,13 +3,13 @@ use r2d2::{Builder, Pool};
 use redis::ConnectionAddr::Tcp;
 use redis::{Cmd, Connection, ConnectionInfo, ConnectionLike, RedisConnectionInfo, RedisError};
 
-use super::builder_entry::{self, Config};
+use crate::common::builder_entry::{self, Config};
 
-pub struct Stub {
+pub struct RedisStub {
     connection_info_: redis::ConnectionInfo,
 }
 
-impl r2d2::ManageConnection for Stub {
+impl r2d2::ManageConnection for RedisStub {
     type Connection = redis::Connection;
     type Error = RedisError;
 
@@ -28,10 +28,9 @@ impl r2d2::ManageConnection for Stub {
     }
 }
 
-type StubBuilder = Builder<Stub>;
-pub(crate) type StubPool = Pool<Stub>;
-pub type StubConfig = Config<Stub>;
-type FnStubBuildHook = Option<fn(&mut StubBuilder)>;
+pub type RedisPool = Pool<RedisStub>;
+pub type StubConfig = Config<RedisStub>;
+type FnStubBuildHook = Option<fn(&mut Builder<RedisStub>)>;
 
 pub fn make_connection_info(
     ip: &str,
@@ -67,15 +66,15 @@ pub fn make_pool_default(
     connnection_info: ConnectionInfo,
     config: StubConfig,
     fn_build_hook: FnStubBuildHook,
-) -> anyhow::Result<StubPool> {
-    let mut builder = builder_entry::make_configured_builder::<Stub>(config);
+) -> anyhow::Result<Pool<RedisStub>> {
+    let mut builder = builder_entry::make_configured_builder::<RedisStub>(config);
 
     // hooking
     if fn_build_hook.is_none() == false {
         fn_build_hook.unwrap()(&mut builder);
     }
 
-    let stub = Stub {
+    let stub = RedisStub {
         connection_info_: connnection_info,
     };
     let pool = builder.build(stub)?;

@@ -9,20 +9,30 @@ server_group:
       customize:
         env_type: "debug"
         worker_count: 10
-    # - host:
-    #     ip: "127.0.0.1"
-    #     port: 30003
-    #   naming:
-    #     service_name: "test_service2"
-    #   customize:
-    #     env_type: "debug"
-    #     worker_count: 10
+mysql_conf:
+  data:
+    - host:
+        ip: "127.0.0.1"
+        port: 13306
+      auth:
+        user: "server_dev"
+        password: "wkddnjsdud"
+      schema_name: "account_db"
+    - host:
+        ip: "127.0.0.1"
+        port: 13306
+      auth:
+        user: "server_dev"
+        password: "wkddnjsdud"
+      schema_name: "game_db"
+  max_connections: 16384
 mq_conf:
   mem_channel_bound: 16
   buffered_writes_high_water: 16777216
   buffered_writes_low_water: 0
-  user: "admin"
-  password: "admin"
+  auth:
+    user: "admin"
+    password: "admin"
   host:
     ip: "127.0.0.1"
     port: 5672
