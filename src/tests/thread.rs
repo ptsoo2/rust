@@ -7,7 +7,7 @@ use chrono::DateTime;
 use ex_common::bench::bench_multiple;
 use ex_util::{
     general_lock::{ILockable, MutexDefault, SpinMutexDefault},
-    shared_raw_ptr::TSharedMutPtr,
+    shared_raw_ptr::SharedMutPtr,
     stop_handle::StopHandle,
     thread_job_queue::{ThreadJobQueueBase, ThreadJobQueueNull, ThreadJobQueueSpin},
 };
@@ -74,7 +74,7 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
 
     // publisher
     for idx in 0..publish_thread_count {
-        let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
+        let wrapper = SharedMutPtr::new(&mut thread_job_queue);
 
         unsafe {
             let thread_process = move || {
@@ -112,7 +112,7 @@ pub(crate) fn test_thread_job_queue_mt(publish_thread_count: usize) {
     }
 
     // consumer
-    let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
+    let wrapper = SharedMutPtr::new(&mut thread_job_queue);
 
     unsafe {
         let thread_process = move || {
@@ -154,7 +154,7 @@ pub(crate) fn test_thread_job_queue_custom_lock<TLock>(
 
     // publisher
     for idx in 0..publish_thread_count {
-        let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
+        let wrapper = SharedMutPtr::new(&mut thread_job_queue);
 
         unsafe {
             let thread_process = move || {
@@ -172,7 +172,7 @@ pub(crate) fn test_thread_job_queue_custom_lock<TLock>(
     }
 
     // consumer
-    let wrapper = TSharedMutPtr::new(&mut thread_job_queue);
+    let wrapper = SharedMutPtr::new(&mut thread_job_queue);
 
     unsafe {
         let thread_process = move || {

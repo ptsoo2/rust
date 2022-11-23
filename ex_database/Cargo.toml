@@ -11,3 +11,4 @@ ex_config = { path = "../ex_config" }
 redis = "0.22.1"
 anyhow = "1.0"
 r2d2 = { version = "0.8.10" }
+sqlx = { version = "0.6", features = [ "runtime-tokio-rustls" ] }

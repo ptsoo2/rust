@@ -9,14 +9,14 @@ server_group:
       customize:
         env_type: "debug"
         worker_count: 10
-    - host:
-        ip: "127.0.0.1"
-        port: 30003
-      naming:
-        service_name: "test_service2"
-      customize:
-        env_type: "debug"
-        worker_count: 10
+    # - host:
+    #     ip: "127.0.0.1"
+    #     port: 30003
+    #   naming:
+    #     service_name: "test_service2"
+    #   customize:
+    #     env_type: "debug"
+    #     worker_count: 10
 mq_conf:
   mem_channel_bound: 16
   buffered_writes_high_water: 16777216

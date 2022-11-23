@@ -10,7 +10,7 @@ use crate::message::Message;
 use super::context::MQContext;
 use ex_common::log;
 use ex_util::{
-    shared_raw_ptr::TSharedMutPtr,
+    shared_raw_ptr::SharedMutPtr,
     stop_handle::{StopHandle, StopToken},
     thread_job_queue::ThreadJobQueueSpin,
 };
@@ -31,7 +31,7 @@ pub struct Publisher {
 struct Inner {
     stop_token_ :StopToken,
     fn_recover_: FnRecover, 
-    message_queue_: TSharedMutPtr<MessageQueue>,
+    message_queue_: SharedMutPtr<MessageQueue>,
 }
 
 impl Publisher {
@@ -48,7 +48,7 @@ impl Publisher {
         let join_handle = tokio::spawn(Self::_run(Inner{
             stop_token_: self.stop_handle_.get_token(),
             fn_recover_: self.fn_recover_.clone(),
-            message_queue_: TSharedMutPtr {
+            message_queue_: SharedMutPtr {
                 value_: &mut self.message_queue_,
             },
         }));
@@ -59,6 +59,9 @@ impl Publisher {
 
     pub fn stop(&mut self) {
         self.stop_handle_.stop();
+        if let Some(join_handle) = &self.join_handle_ {
+            while join_handle.is_finished() == false {}
+        }
     }
 
     pub fn publish(&mut self, message: Message) {
@@ -110,6 +113,8 @@ impl Publisher {
             if let Some(mut mq_context) = mq_context {
                 mq_context.close().await.expect("failed close");
             }
+
+            log!("success closed mq publisher...");
         }
     }
 }

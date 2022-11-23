@@ -1,11 +1,11 @@
-pub struct TSharedMutPtr<T> {
+pub struct SharedMutPtr<T> {
     #[allow(unused)]
     pub value_: *mut T,
 }
 
-unsafe impl<T> Send for TSharedMutPtr<T> {}
+unsafe impl<T> Send for SharedMutPtr<T> {}
 
-impl<T> TSharedMutPtr<T> {
+impl<T> SharedMutPtr<T> {
     #[allow(unused)]
     pub fn new(value: *mut T) -> Self {
         Self { value_: value }

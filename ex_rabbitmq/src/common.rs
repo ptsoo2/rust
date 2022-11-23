@@ -4,7 +4,7 @@ use lapin::{Connection, ConnectionProperties};
 
 type Config = ex_config::config_format::MQConf;
 
-pub async fn _make_connection(mq_conf: &Config) -> anyhow::Result<Connection, lapin::Error> {
+pub(crate) async fn _make_connection(mq_conf: &Config) -> anyhow::Result<Connection, lapin::Error> {
     Connection::connect(&_into_uri(mq_conf)[..], _into_connect_properties(mq_conf)).await
 }
 

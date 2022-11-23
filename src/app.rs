@@ -1,14 +1,12 @@
 use crate::{
     command_line::CommandLine,
     server::mount_port1,
-    server::mount_port2,
     server_common,
     third_party::{boot_mq, boot_redis, MapRedisPool, RedisPool},
 };
-use ex_common::{get_mut_ref_member, get_ref_member};
+use ex_common::{get_mut_ref_member, get_ref_member, log};
 use ex_config::config::{Config, EConfigLoadType};
 use ex_rabbitmq::publisher::Publisher;
-use rocket::{Ignite, Rocket};
 
 pub struct App {
     command_line_: Option<CommandLine>,
@@ -32,16 +30,24 @@ impl App {
     }
 
     #[allow(unused)]
-    pub async fn launch(&'static mut self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
-        self._boot_third_party().await?._launch().await
+    pub async fn launch(&'static mut self) -> anyhow::Result<()> {
+        let this = self._boot_third_party().await?._launch().await?;
+
+        this._cleanup().await;
+        log!("success all cleanup");
+        Ok(())
     }
 
-    pub async fn _launch(&'static mut self) -> anyhow::Result<Vec<Rocket<Ignite>>> {
+    pub async fn _launch(&'static mut self) -> anyhow::Result<&'static mut App> /*anyhow::Result<(&'static mut App, Vec<Rocket<Ignite>>)>*/
+    {
         let server_config_list = &mut get_mut_ref_member!(self, config_).server_group.data;
-        let launch_hint_list =
-            server_common::make_launch_hint_list(server_config_list, &[mount_port1, mount_port2])?;
+        let launch_hint_list = server_common::make_launch_hint_list(
+            server_config_list,
+            &[mount_port1 /*, mount_port2 */],
+        )?;
 
-        server_common::launch_all(launch_hint_list).await
+        server_common::launch_all(launch_hint_list).await?;
+        Ok(self)
     }
 
     pub fn get_config(&'static self) -> &Config {
@@ -67,6 +73,14 @@ impl App {
         self.map_redis_pool_ = Some(boot_redis(get_mut_ref_member!(self, config_))?);
         self.mq_publisher_ = Some(boot_mq(&get_mut_ref_member!(self, config_).mq_conf));
         get_mut_ref_member!(self, mq_publisher_).start().await?;
+        Ok(self)
+    }
+
+    async fn _cleanup(&'static mut self) -> anyhow::Result<&'static mut App> {
+        // rabbitmq
+        if let Some(publisher) = &mut self.mq_publisher_ {
+            publisher.stop();
+        }
         Ok(self)
     }
 }

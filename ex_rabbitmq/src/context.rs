@@ -36,13 +36,13 @@ impl MQContext {
     pub async fn close(&mut self) -> anyhow::Result<()> {
         assert_eq!(self.is_connected(), true);
         for (channel_no, channel) in self.map_channel_.iter() {
-            log!("try close channel({})", channel_no);
-
             channel.close(1, "reply_text").await?;
+            log!("success close channel({})", channel_no);
         }
 
         self.map_channel_.clear();
         self.conn_.close(1, "reply_text").await?;
+        log!("success close connection");
         Ok(())
     }
 
