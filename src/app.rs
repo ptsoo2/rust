@@ -13,7 +13,7 @@ pub struct App {
     command_line_: Option<CommandLine>,
     config_: Option<Config>,
     map_redis_pool_: Option<MapRedisPool>,
-    mysql_pool_: Option<MapMySQLPool>,
+    map_mysql_pool_: Option<MapMySQLPool>,
     mq_publisher_: Option<Publisher>,
 }
 
@@ -61,7 +61,7 @@ impl App {
 
     #[allow(unused)]
     pub fn get_mysql_pool(&'static self, schema_name: &'static str) -> Option<&MySQLPool> {
-        get_ref_member!(self, mysql_pool_).get(&schema_name)
+        get_ref_member!(self, map_mysql_pool_).get(&schema_name)
     }
 
     #[allow(unused)]
@@ -77,12 +77,10 @@ impl App {
     async fn _boot_third_party(&'static mut self) -> anyhow::Result<&'static mut App> {
         // database
         self.map_redis_pool_ = Some(boot_redis()?);
-        self.mysql_pool_ = Some(boot_mysql().await?);
+        self.map_mysql_pool_ = Some(boot_mysql().await?);
 
         // middleware
-        self.mq_publisher_ = Some(boot_mq().await);
-        // todo! start 를 boot_mq 내부에서 하니까 바로 스레드가 종료된다. 이유가 뭐지? 알아봐야함.
-        get_mut_ref_member!(self, mq_publisher_).start().await?;
+        self.mq_publisher_ = Some(boot_mq().await?);
 
         Ok(self)
     }
@@ -102,7 +100,7 @@ pub static mut INSTANCE: App = App {
     command_line_: None,
     config_: None,
     map_redis_pool_: None,
-    mysql_pool_: None,
+    map_mysql_pool_: None,
     mq_publisher_: None,
 };
 

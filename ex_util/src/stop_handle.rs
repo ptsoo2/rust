@@ -14,13 +14,13 @@ impl StopToken {
 unsafe impl Send for StopToken {}
 
 pub struct StopHandle {
-    stop_flag_: AtomicBool,
+    stop_flag_: Box<AtomicBool>,
 }
 
 impl StopHandle {
     pub fn new() -> Self {
         Self {
-            stop_flag_: AtomicBool::new(false),
+            stop_flag_: Box::new(AtomicBool::new(false)),
         }
     }
 
@@ -34,7 +34,7 @@ impl StopHandle {
 
     pub fn get_token(&mut self) -> StopToken {
         StopToken {
-            stop_flag_: &self.stop_flag_,
+            stop_flag_: &*self.stop_flag_,
         }
     }
 }

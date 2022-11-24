@@ -72,18 +72,24 @@ pub(crate) async fn boot_mysql() -> anyhow::Result<MapMySQLPool> {
 }
 
 #[allow(unused)]
-pub(crate) async fn boot_mq() -> Publisher {
-    Publisher::new(|| {
+pub(crate) async fn boot_mq() -> anyhow::Result<Publisher> {
+    let mut publisher = Publisher::new(|| {
         async move {
             let mq_conf = &app::get_instance().get_config().mq_conf;
             let mut context = MQContext::new(mq_conf).await?;
             context
                 .channel()
                 .await?
-                .declare_exchange(1, "game_server.direct", ExchangeKind::Direct)
+                .declare_exchange(
+                    1,
+                    &mq_conf.publish_exchange.direct[..],
+                    ExchangeKind::Direct,
+                )
                 .await?;
             Ok(context)
         }
         .boxed()
-    })
+    });
+    publisher.start().await?;
+    Ok(publisher)
 }
