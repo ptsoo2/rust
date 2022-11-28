@@ -1,13 +1,16 @@
 use std::{collections::VecDeque, ptr::null_mut};
 
-use crate::general_lock::{ILockable, MutexDefault, NullMutex, SpinMutexDefault};
+use crate::{
+    general_lock::{ILockable, MutexDefault, NullMutex, SpinMutexDefault},
+    shared_raw_ptr::SharedMutPtr,
+};
 
 pub struct ThreadJobQueueBase<TElem, TLock>
 where
     TLock: ILockable,
 {
-    write_queue_: *mut VecDeque<TElem>,
-    read_queue_: *mut VecDeque<TElem>,
+    write_queue_: SharedMutPtr<VecDeque<TElem>>,
+    read_queue_: SharedMutPtr<VecDeque<TElem>>,
     lst_queue_: Box<[VecDeque<TElem>; 2]>,
 
     #[allow(unused)]
@@ -22,14 +25,14 @@ where
 {
     fn default() -> Self {
         let mut ret_self = Self {
-            write_queue_: null_mut(),
-            read_queue_: null_mut(),
+            write_queue_: SharedMutPtr { value_: null_mut() },
+            read_queue_: SharedMutPtr { value_: null_mut() },
             lst_queue_: Box::new([VecDeque::new(), VecDeque::new()]),
             lock_: ILockable::new(),
         };
 
-        ret_self.write_queue_ = &mut ret_self.lst_queue_[0];
-        ret_self.read_queue_ = &mut ret_self.lst_queue_[1];
+        ret_self.write_queue_.value_ = &mut ret_self.lst_queue_[0];
+        ret_self.read_queue_.value_ = &mut ret_self.lst_queue_[1];
         ret_self
     }
 }
@@ -40,7 +43,7 @@ where
 {
     pub fn push(&mut self, val: TElem) {
         self.lock_.critical_process(|| unsafe {
-            (*self.write_queue_).push_back(val);
+            (*self.write_queue_.value_).push_back(val);
         });
     }
 
@@ -48,8 +51,8 @@ where
         self.lock_.critical_process(|| {
             // read_queue => empty && write_queue => not empty
             unsafe {
-                if ((*self.read_queue_).is_empty() == true)
-                    && ((*self.write_queue_).is_empty() == false)
+                if ((*self.read_queue_.value_).is_empty() == true)
+                    && ((*self.write_queue_.value_).is_empty() == false)
                 {
                     std::mem::swap(&mut self.write_queue_, &mut self.read_queue_);
                 }
@@ -76,7 +79,7 @@ where
 
     #[allow(unused)]
     pub fn get_read_queue(&mut self) -> &mut VecDeque<TElem> {
-        unsafe { &mut (*self.read_queue_) }
+        unsafe { &mut (*self.read_queue_.value_) }
     }
 }
 

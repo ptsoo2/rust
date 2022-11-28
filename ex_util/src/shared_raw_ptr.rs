@@ -4,6 +4,7 @@ pub struct SharedMutPtr<T> {
 }
 
 unsafe impl<T> Send for SharedMutPtr<T> {}
+unsafe impl<T> Sync for SharedMutPtr<T> {}
 
 impl<T> SharedMutPtr<T> {
     #[allow(unused)]

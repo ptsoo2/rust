@@ -8,7 +8,6 @@ use ex_common::{get_mut_ref_member, get_ref_member, log};
 use ex_config::config::{Config, EConfigLoadType};
 use ex_database::{ex_mysql::mysql_entry::MySQLPool, ex_redis::redis_entry::RedisPool};
 use ex_rabbitmq::publisher::Publisher;
-
 pub struct App {
     command_line_: Option<CommandLine>,
     config_: Option<Config>,
