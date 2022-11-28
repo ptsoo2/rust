@@ -18,7 +18,7 @@ pub async fn request_account_key(account_id: AccountId) -> anyhow::Result<Accoun
         return Ok(row.try_get("account_key")?);
     }
 
-    return Ok(INVALID_ACCOUNT_KEY);
+    Ok(INVALID_ACCOUNT_KEY)
 }
 
 pub async fn add_account_key(account_id: AccountId, account_key: AccountKey) -> anyhow::Result<()> {

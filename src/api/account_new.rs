@@ -15,18 +15,21 @@ pub async fn account_exists(account_id: String) -> String {
         };
     }
 
-    return "failed execute".to_string();
+    "failed execute".to_string()
 }
 
 #[get("/account_new/<account_id>")]
 pub async fn account_new(account_id: String) -> String {
     // todo! account_id validate
     let account_key = 0;
-    if let Ok(_) = db_request::account::add_account_key(account_id, account_key).await {
+    if db_request::account::add_account_key(account_id, account_key)
+        .await
+        .is_ok()
+    {
         return account_key.to_string();
     }
 
-    return "failed execute".to_string();
+    "failed execute".to_string()
 }
 
 static mut TEST_ACCOUNT_KEY: AccountKey = 123;
@@ -35,12 +38,15 @@ static mut TEST_ACCOUNT_KEY: AccountKey = 123;
 pub async fn test_account_new(account_id: String) -> String {
     // todo! account_id validate
     unsafe {
-        if let Ok(_) = db_request::account::add_account_key(account_id, TEST_ACCOUNT_KEY).await {
+        if db_request::account::add_account_key(account_id, TEST_ACCOUNT_KEY)
+            .await
+            .is_ok()
+        {
             let prev_account_key = TEST_ACCOUNT_KEY;
             TEST_ACCOUNT_KEY += 1;
             return prev_account_key.to_string();
         }
     }
 
-    return "failed execute".to_string();
+    "failed execute".to_string()
 }
