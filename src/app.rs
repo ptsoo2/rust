@@ -1,6 +1,6 @@
 use crate::{
+    api::server::mount_port1,
     command_line::CommandLine,
-    server::mount_port1,
     server_common,
     third_party::{boot_mq, boot_mysql, boot_redis, MapMySQLPool, MapRedisPool},
 };
@@ -41,10 +41,8 @@ impl App {
     pub async fn _launch(&'static mut self) -> anyhow::Result<&'static mut App> /*anyhow::Result<(&'static mut App, Vec<Rocket<Ignite>>)>*/
     {
         let server_config_list = &mut get_mut_ref_member!(self, config_).server_group.data;
-        let launch_hint_list = server_common::make_launch_hint_list(
-            server_config_list,
-            &[mount_port1 /*, mount_port2 */],
-        )?;
+        let launch_hint_list =
+            server_common::make_launch_hint_list(server_config_list, &[mount_port1])?;
 
         server_common::launch_all(launch_hint_list).await?;
         Ok(self)

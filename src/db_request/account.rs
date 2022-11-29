@@ -3,12 +3,12 @@ use futures::TryStreamExt;
 use sqlx::{pool::PoolConnection, MySql, Row};
 
 use crate::{
-    api::account_new::{AccountId, AccountKey, INVALID_ACCOUNT_KEY},
+    api::res::{AccountId, AccountKey, INVALID_ACCOUNT_KEY},
     app,
     third_party::EMySQLType,
 };
 
-pub async fn request_account_key(account_id: AccountId) -> anyhow::Result<AccountKey> {
+pub async fn get_account_key(account_id: AccountId) -> anyhow::Result<AccountKey> {
     let mut conn = _get_account_db_pool().await?;
     let mut rows = sqlx::query("seLect account_key FROM web_account.account WHERE account_id = ?")
         .bind(account_id)
