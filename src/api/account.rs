@@ -43,10 +43,12 @@ pub async fn account_new(account_id: String) -> Custom<String> {
 pub async fn get_account_key(account_id: String) -> Custom<String> {
     // todo! account_id validate
     if let Ok(account_key) = db_request::account::get_account_key(account_id).await {
-        let res = ResAccountKey {
-            account_key: account_key,
-        };
-        return send_response(Status::Ok, Some(res));
+        if account_key != INVALID_ACCOUNT_KEY {
+            let res = ResAccountKey {
+                account_key: account_key,
+            };
+            return send_response(Status::Ok, Some(res));
+        }
     }
 
     send_response(Status::InternalServerError, NONE_BODY)
