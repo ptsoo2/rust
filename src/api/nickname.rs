@@ -10,7 +10,10 @@ use super::{
 #[put("/set_nickname/<account_key>/<nickname>")]
 pub async fn set_nickname(account_key: AccountKey, nickname: String) -> Custom<String> {
     // todo! account_id validate
-    if let Ok(_) = db_request::nickname::set_nickname(account_key, nickname).await {
+    if db_request::nickname::set_nickname(account_key, nickname)
+        .await
+        .is_ok()
+    {
         return send_response(Status::Ok, NONE_BODY);
     }
 
@@ -20,7 +23,10 @@ pub async fn set_nickname(account_key: AccountKey, nickname: String) -> Custom<S
 #[patch("/change_nickname/<account_key>/<nickname>")]
 pub async fn change_nickname(account_key: AccountKey, nickname: String) -> Custom<String> {
     // todo! account_id validate
-    if let Ok(_) = db_request::nickname::change_nickname(account_key, nickname).await {
+    if db_request::nickname::change_nickname(account_key, nickname)
+        .await
+        .is_ok()
+    {
         return send_response(Status::Ok, NONE_BODY);
     }
 
@@ -30,7 +36,10 @@ pub async fn change_nickname(account_key: AccountKey, nickname: String) -> Custo
 #[patch("/exists_nickname/<nickname>")]
 pub async fn exists_nickname(nickname: String) -> Custom<String> {
     // todo! account_id validate
-    if let Ok(_) = db_request::nickname::get_account_key_with_nickname(nickname).await {
+    if db_request::nickname::get_account_key_with_nickname(nickname)
+        .await
+        .is_ok()
+    {
         let res = ResExists { is_exist: true };
         return send_response(Status::Ok, Some(res));
     }

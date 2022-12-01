@@ -26,7 +26,7 @@ pub async fn exists_account(account_id: String) -> Custom<String> {
 pub async fn account_new(account_id: String) -> Custom<String> {
     // todo! account_id validate
     let res = ResAccountKey {
-        account_key: 0123123123,
+        account_key: 123123123,
     };
 
     if db_request::account_key::add_account_key(account_id, res.account_key)
@@ -44,7 +44,7 @@ pub async fn get_account_key(account_id: String) -> Custom<String> {
     // todo! account_id validate
     if let Ok(account_key) = db_request::account_key::get_account_key(account_id).await {
         let res = ResAccountKey {
-            account_key: account_key,
+            account_key,
         };
         return send_response(Status::Ok, Some(res));
     }
@@ -56,7 +56,7 @@ pub async fn get_account_key(account_id: String) -> Custom<String> {
 pub async fn get_nickname(account_key: AccountKey) -> Custom<String> {
     // todo! account_id validate
     if let Ok(nickname) = db_request::nickname::get_nickname(account_key).await {
-        let res = ResNickname { nickname: nickname };
+        let res = ResNickname { nickname };
         return send_response(Status::Ok, Some(res));
     }
 
