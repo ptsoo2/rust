@@ -1,12 +1,10 @@
 use anyhow::bail;
 use futures::TryStreamExt;
-use sqlx::{pool::PoolConnection, MySql, Row};
+use sqlx::Row;
 
-use crate::{
-    api::res::{AccountId, AccountKey, INVALID_ACCOUNT_KEY},
-    app,
-    third_party::EMySQLType,
-};
+use crate::api::res::{AccountId, AccountKey};
+
+use super::_get_account_db_pool;
 
 pub async fn get_account_key(account_id: AccountId) -> anyhow::Result<AccountKey> {
     let mut conn = _get_account_db_pool().await?;
@@ -18,7 +16,7 @@ pub async fn get_account_key(account_id: AccountId) -> anyhow::Result<AccountKey
         return Ok(row.try_get("account_key")?);
     }
 
-    Ok(INVALID_ACCOUNT_KEY)
+    bail!("not exist account")
 }
 
 pub async fn add_account_key(account_id: AccountId, account_key: AccountKey) -> anyhow::Result<()> {
@@ -30,12 +28,4 @@ pub async fn add_account_key(account_id: AccountId, account_key: AccountKey) -> 
         .await?;
 
     Ok(())
-}
-
-async fn _get_account_db_pool() -> anyhow::Result<PoolConnection<MySql>> {
-    if let Some(pool) = app::get_instance().get_mysql_pool(EMySQLType::ACCOUNT) {
-        let a = pool.acquire().await?;
-        return Ok(a);
-    }
-    bail!("failed get account db pool")
 }

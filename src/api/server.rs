@@ -19,13 +19,21 @@ pub(crate) mod port1 {
 mod port2 {}
 
 pub fn mount_port1(rocket: Rocket<Build>) -> Rocket<Build> {
-    rocket
+    let rocket = rocket
         .mount("/", routes![port1::home])
-        .mount("/", routes![port1::shutdown])
+        .mount("/", routes![port1::shutdown]);
+
+    let rocket = rocket
         .mount("/", routes![api::account::account_new])
         .mount("/", routes![api::account::test_account_new])
-        .mount("/", routes![api::account::account_exists])
-        .mount("/", routes![api::account::get_account_key])
+        .mount("/", routes![api::account::exists_account])
+        .mount("/", routes![api::account::get_account_key]);
+
+    rocket
+        .mount("/", routes![api::account::get_nickname])
+        .mount("/", routes![api::nickname::set_nickname])
+        .mount("/", routes![api::nickname::change_nickname])
+        .mount("/", routes![api::nickname::exists_nickname])
 }
 
 #[allow(unused)]

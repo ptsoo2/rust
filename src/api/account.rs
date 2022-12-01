@@ -3,15 +3,15 @@ use rocket::{http::Status, response::status::Custom};
 use crate::db_request::{self};
 
 use super::{
-    common::send_response,
-    res::{AccountKey, ResAccountExists, ResAccountKey, INVALID_ACCOUNT_KEY, NONE_BODY},
+    res::{AccountKey, ResAccountKey, ResExists, ResNickname, INVALID_ACCOUNT_KEY, NONE_BODY},
+    send_response,
 };
 
-#[get("/exists/<account_id>")]
-pub async fn account_exists(account_id: String) -> Custom<String> {
+#[get("/exists_account/<account_id>")]
+pub async fn exists_account(account_id: String) -> Custom<String> {
     // todo! account_id validate
-    let mut res = ResAccountExists { is_exist: false };
-    if let Ok(account_key) = db_request::account::get_account_key(account_id).await {
+    if let Ok(account_key) = db_request::account_key::get_account_key(account_id).await {
+        let mut res = ResExists { is_exist: false };
         if account_key != INVALID_ACCOUNT_KEY {
             res.is_exist = true;
         }
@@ -29,7 +29,7 @@ pub async fn account_new(account_id: String) -> Custom<String> {
         account_key: 0123123123,
     };
 
-    if db_request::account::add_account_key(account_id, res.account_key)
+    if db_request::account_key::add_account_key(account_id, res.account_key)
         .await
         .is_ok()
     {
@@ -42,13 +42,22 @@ pub async fn account_new(account_id: String) -> Custom<String> {
 #[get("/get_account_key/<account_id>")]
 pub async fn get_account_key(account_id: String) -> Custom<String> {
     // todo! account_id validate
-    if let Ok(account_key) = db_request::account::get_account_key(account_id).await {
-        if account_key != INVALID_ACCOUNT_KEY {
-            let res = ResAccountKey {
-                account_key: account_key,
-            };
-            return send_response(Status::Ok, Some(res));
-        }
+    if let Ok(account_key) = db_request::account_key::get_account_key(account_id).await {
+        let res = ResAccountKey {
+            account_key: account_key,
+        };
+        return send_response(Status::Ok, Some(res));
+    }
+
+    send_response(Status::InternalServerError, NONE_BODY)
+}
+
+#[get("/get_nickname/<account_key>")]
+pub async fn get_nickname(account_key: AccountKey) -> Custom<String> {
+    // todo! account_id validate
+    if let Ok(nickname) = db_request::nickname::get_nickname(account_key).await {
+        let res = ResNickname { nickname: nickname };
+        return send_response(Status::Ok, Some(res));
     }
 
     send_response(Status::InternalServerError, NONE_BODY)
@@ -63,7 +72,7 @@ pub async fn test_account_new(account_id: String) -> Custom<String> {
         let res = ResAccountKey {
             account_key: TEST_ACCOUNT_KEY,
         };
-        if db_request::account::add_account_key(account_id, res.account_key)
+        if db_request::account_key::add_account_key(account_id, res.account_key)
             .await
             .is_ok()
         {
