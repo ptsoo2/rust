@@ -10,14 +10,19 @@ pub async fn get_nickname(account_key: AccountKey) -> anyhow::Result<String> {
         .bind(account_key)
         .fetch(&mut conn);
 
-    if let Some(row) = rows.try_next().await? {
-        match row.try_get("nickname") {
-            Ok(nickname) => return Ok(nickname),
-            Err(_) => return Ok("".to_owned()),
-        }
+    let row = rows.try_next().await;
+    if row.is_err() == true {
+        return Ok("".to_owned());
     }
 
-    bail!("not exist account")
+    let row = row.expect("!!");
+    if row.is_none() == true {
+        return Ok("".to_owned());
+    }
+
+    let row = row.expect("!!");
+    let nickname = row.try_get("nickname")?;
+    Ok(nickname)
 }
 
 pub async fn set_nickname(account_key: AccountKey, nickname: String) -> anyhow::Result<()> {

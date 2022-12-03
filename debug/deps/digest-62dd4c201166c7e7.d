@@ -1,0 +1,13 @@
+C:\Users\taeso\Desktop\hi_rust\./debug\deps\digest-62dd4c201166c7e7.rmeta: C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\lib.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\digest.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\dyn_digest.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\errors.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\fixed.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\variable.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\xof.rs
+
+C:\Users\taeso\Desktop\hi_rust\./debug\deps\libdigest-62dd4c201166c7e7.rlib: C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\lib.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\digest.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\dyn_digest.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\errors.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\fixed.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\variable.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\xof.rs
+
+C:\Users\taeso\Desktop\hi_rust\./debug\deps\digest-62dd4c201166c7e7.d: C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\lib.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\digest.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\dyn_digest.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\errors.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\fixed.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\variable.rs C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\xof.rs
+
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\lib.rs:
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\digest.rs:
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\dyn_digest.rs:
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\errors.rs:
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\fixed.rs:
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\variable.rs:
+C:\Users\taeso\.cargo\registry\src\github.com-1ecc6299db9ec823\digest-0.9.0\src\xof.rs:
