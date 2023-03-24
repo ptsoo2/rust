@@ -2,19 +2,14 @@
 #![feature(type_ascription)]
 #![feature(associated_type_defaults)]
 
-#[allow(unused)]
-use tests::{mq, redis, starter, thread as test_thread};
-
 #[macro_use]
 extern crate rocket;
 extern crate core;
 
-mod api;
+mod account_server;
 mod app;
 mod command_line;
-mod db_request;
 mod server_common;
-mod tests;
 mod third_party;
 
 #[rocket::main]

@@ -1,6 +1,6 @@
 use rocket::{http::Status, response::status::Custom};
 
-use crate::db_request;
+use crate::account_server::db_request;
 
 use super::{
     res::{AccountKey, ResExists, NONE_BODY},

@@ -2,7 +2,9 @@ use anyhow::bail;
 use futures::TryStreamExt;
 use sqlx::Row;
 
-use crate::{api::res::AccountKey, db_request::_get_account_db_pool};
+use crate::account_server::api::res::AccountKey;
+
+use super::_get_account_db_pool;
 
 pub async fn get_nickname(account_key: AccountKey) -> anyhow::Result<String> {
     let mut conn = _get_account_db_pool().await?;

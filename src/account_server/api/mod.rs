@@ -6,7 +6,6 @@ use rocket::{
 use serde::Serialize;
 
 pub mod account;
-
 pub mod nickname;
 pub mod res;
 pub mod server;

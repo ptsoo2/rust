@@ -2,7 +2,7 @@ use anyhow::bail;
 use futures::TryStreamExt;
 use sqlx::Row;
 
-use crate::api::res::{AccountId, AccountKey};
+use crate::account_server::api::res::{AccountId, AccountKey};
 
 use super::_get_account_db_pool;
 

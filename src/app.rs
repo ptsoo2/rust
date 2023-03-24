@@ -1,13 +1,15 @@
 use crate::{
-    api::server::mount_port1,
+    account_server::api::server::mount_port1,
     command_line::CommandLine,
     server_common,
     third_party::{boot_mq, boot_mysql, boot_redis, MapMySQLPool, MapRedisPool},
 };
+
 use ex_common::{get_mut_ref_member, get_ref_member, log};
 use ex_config::config::{Config, EConfigLoadType};
 use ex_database::{ex_mysql::mysql_entry::MySQLPool, ex_redis::redis_entry::RedisPool};
 use ex_rabbitmq::publisher::Publisher;
+
 pub struct App {
     command_line_: Option<CommandLine>,
     config_: Option<Config>,
@@ -52,6 +54,7 @@ impl App {
         get_ref_member!(self, config_)
     }
 
+    #[allow(unused)]
     pub fn get_redis_pool(&'static self, db_no: u8) -> Option<&RedisPool> {
         get_ref_member!(self, map_redis_pool_).get(&db_no)
     }

@@ -1,6 +1,6 @@
 use rocket::{Build, Rocket};
 
-use crate::api;
+use super::{account, nickname};
 
 pub(crate) mod port1 {
     use rocket::Shutdown;
@@ -24,16 +24,16 @@ pub fn mount_port1(rocket: Rocket<Build>) -> Rocket<Build> {
         .mount("/", routes![port1::shutdown]);
 
     let rocket = rocket
-        .mount("/", routes![api::account::account_new])
-        .mount("/", routes![api::account::test_account_new])
-        .mount("/", routes![api::account::exists_account])
-        .mount("/", routes![api::account::get_account_key]);
+        .mount("/", routes![account::account_new])
+        .mount("/", routes![account::test_account_new])
+        .mount("/", routes![account::exists_account])
+        .mount("/", routes![account::get_account_key]);
 
     rocket
-        .mount("/", routes![api::account::get_nickname])
-        .mount("/", routes![api::nickname::set_nickname])
-        .mount("/", routes![api::nickname::change_nickname])
-        .mount("/", routes![api::nickname::exists_nickname])
+        .mount("/", routes![account::get_nickname])
+        .mount("/", routes![nickname::set_nickname])
+        .mount("/", routes![nickname::change_nickname])
+        .mount("/", routes![nickname::exists_nickname])
 }
 
 #[allow(unused)]

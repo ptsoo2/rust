@@ -4,7 +4,6 @@ use sqlx::{pool::PoolConnection, MySql};
 use crate::{app, third_party::EMySQLType};
 
 pub mod account_key;
-pub mod model;
 pub mod nickname;
 
 pub(crate) async fn _get_account_db_pool() -> anyhow::Result<PoolConnection<MySql>> {
