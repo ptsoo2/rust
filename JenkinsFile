@@ -1,0 +1,31 @@
+pipeline {
+	agent any
+
+	stages {
+		stage('Pre-Build') {
+			steps {
+				sh 'pwd'
+			}
+		}
+    }
+	
+	post {
+        always {
+            echo 'done...'
+        }
+        success {
+            build job : 'Common_Slack_Notification',
+                parameters: [
+                    string(name: 'slack_url', value: 'https://hooks.slack.com/services/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'),
+                    string(name: 'slack_message', value: '[알림] Rust 리눅스 빌드가 완료 되었습니다')
+                ]
+        }
+        failure {
+            build job : 'Common_Slack_Notification',
+                parameters: [
+                    string(name: 'slack_url', value: 'https://hooks.slack.com/services/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'),
+                    string(name: 'slack_message', value: '[알림] Rust 리눅스 빌드가 실패 하였습니다.')
+                ]
+        }
+    }
+}
