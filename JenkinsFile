@@ -2,9 +2,17 @@ pipeline {
 	agent any
 
 	stages {
-		stage('Pre-Build') {
+		stage('Build') {
 			steps {
-				sh 'pwd'
+				sh 'cargo build --release'
+			}
+		}
+		
+		stage('Deploy') {
+			steps {
+				dir('./target/release'){
+					sh 'scp hi_rust ubuntu@64.110.88.240:/home/ubuntu/data/web/'
+				}
 			}
 		}
     }
