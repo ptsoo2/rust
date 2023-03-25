@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use anyhow::bail;
 
+use ex_common::log;
 use ex_database::{
     ex_mysql::mysql_entry::{make_pool_default, MySQLPool},
     ex_redis::redis_entry::{self, RedisPool},
@@ -55,6 +56,7 @@ pub(crate) fn boot_redis() -> anyhow::Result<MapRedisPool> {
         }
     }
 
+    log!("Success to boot redis");
     Ok(map_redis_pool)
 }
 
@@ -68,6 +70,8 @@ pub(crate) async fn boot_mysql() -> anyhow::Result<MapMySQLPool> {
             bail!("alreay exist schema_name({})", conf.schema_name);
         }
     }
+
+    log!("Success to boot mysql");
     Ok(map_mysql_pool)
 }
 
@@ -91,5 +95,7 @@ pub(crate) async fn boot_mq() -> anyhow::Result<Publisher> {
         .boxed()
     });
     publisher.start().await?;
+
+    log!("Success to boot rabbitmq");
     Ok(publisher)
 }
