@@ -29,7 +29,7 @@ pub fn mount_port1(rocket: Rocket<Build>) -> Rocket<Build> {
     let rocket = rocket
         .mount("/", routes![port1::home])
         .mount("/", routes![port1::shutdown])
-        .mount("/ping", routes![port1::ping]);
+        .mount("/", routes![port1::ping]);
 
     let rocket = rocket
         .mount("/", routes![account::account_new])
@@ -49,5 +49,5 @@ pub fn mount_port2(rocket: Rocket<Build>) -> Rocket<Build> {
     rocket
         .mount("/", routes![port1::home])
         .mount("/", routes![port1::shutdown])
-        .mount("/ping", routes![port1::ping])
+        .mount("/", routes![port1::ping])
 }
