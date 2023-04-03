@@ -3,7 +3,9 @@ use rocket::{Build, Rocket};
 use super::{account, nickname};
 
 pub(crate) mod port1 {
-    use rocket::Shutdown;
+    use rocket::{http::Status, response::status::Custom, Shutdown};
+
+    use crate::account_server::api::{make_common_body, send_response};
 
     #[get("/")]
     pub(crate) fn home() -> String {
@@ -14,6 +16,11 @@ pub(crate) mod port1 {
         shutdown.notify();
         "Shutting down..."
     }
+
+    #[get("/ping")]
+    pub(crate) fn ping() -> Custom<String> {
+        return send_response(Status::Ok, Some("pong"));
+    }
 }
 
 mod port2 {}
@@ -21,7 +28,8 @@ mod port2 {}
 pub fn mount_port1(rocket: Rocket<Build>) -> Rocket<Build> {
     let rocket = rocket
         .mount("/", routes![port1::home])
-        .mount("/", routes![port1::shutdown]);
+        .mount("/", routes![port1::shutdown])
+        .mount("/ping", routes![port1::ping]);
 
     let rocket = rocket
         .mount("/", routes![account::account_new])
@@ -41,4 +49,5 @@ pub fn mount_port2(rocket: Rocket<Build>) -> Rocket<Build> {
     rocket
         .mount("/", routes![port1::home])
         .mount("/", routes![port1::shutdown])
+        .mount("/ping", routes![port1::ping])
 }
