@@ -5,7 +5,7 @@ use super::{account, nickname};
 pub(crate) mod port1 {
     use rocket::{http::Status, response::status::Custom, Shutdown};
 
-    use crate::account_server::api::{make_common_body, send_response};
+    use crate::account_server::api::send_response;
 
     #[get("/")]
     pub(crate) fn home() -> String {
