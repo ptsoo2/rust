@@ -11,7 +11,22 @@ pipeline {
 		stage('Deploy') {
 			steps {
 				dir('./target/release'){
-					sh 'scp hi_rust ubuntu@64.110.88.240:/home/ubuntu/data/web/'
+					sshPublisher(
+						continueOnError: false, 
+						failOnError: true,
+						publishers: [
+							sshPublisherDesc(
+								configName: "Local",
+								transfers: [
+									sshTransfer(
+										sourceFiles: 'hi_rust', 
+										// remoteDirectory: ''
+									)
+								],
+								verbose: true
+							)
+						]
+					)
 				}
 			}
 		}
