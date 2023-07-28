@@ -44,18 +44,18 @@ where
         if _is_wsl_interface(network_interface) == true {
             continue;
         }
-        let addr = network_interface.addr;
-        continue_fail_option!(addr);
 
-        let addr = addr.unwrap().ip();
-        if addr.is_loopback() == true {
-            continue;
+        let lst_addr = &network_interface.addr;
+        for addr in lst_addr.iter() {
+            let addr = addr.ip();
+            if addr.is_loopback() == true {
+                continue;
+            }
+
+            let addr = <T as ConvertIpAddr<T>>::convert(&addr);
+            continue_fail_option!(addr);
+            return Ok(addr.unwrap());
         }
-
-        let addr = <T as ConvertIpAddr<T>>::convert(&addr);
-        continue_fail_option!(addr);
-
-        return Ok(addr.unwrap());
     }
     bail!("not found ip address")
 }

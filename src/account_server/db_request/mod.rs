@@ -1,15 +1,14 @@
 use anyhow::bail;
-use sqlx::{pool::PoolConnection, MySql};
+use sqlx::MySqlPool;
 
 use crate::{app, third_party::EMySQLType};
 
 pub mod account_key;
 pub mod nickname;
 
-pub(crate) async fn _get_account_db_pool() -> anyhow::Result<PoolConnection<MySql>> {
+pub(crate) async fn _get_account_db_pool() -> anyhow::Result<&'static MySqlPool> {
     if let Some(pool) = app::get_instance().get_mysql_pool(EMySQLType::ACCOUNT) {
-        let a = pool.acquire().await?;
-        return Ok(a);
+        return Ok(pool);
     }
     bail!("failed get account db pool")
 }

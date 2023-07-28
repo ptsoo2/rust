@@ -19,7 +19,7 @@ pub(crate) mod port1 {
 
     #[get("/ping")]
     pub(crate) fn ping() -> Custom<String> {
-        return send_response(Status::Ok, Some("pong"));
+        send_response(Status::Ok, Some("pong"))
     }
 }
 
